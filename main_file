@@ -1,0 +1,59 @@
+#--------------------------
+# xebro GmbH - Makefile - 1.0.2
+#--------------------------
+
+.ONESHELL:
+.SHELLFLAGS := -eu -o pipefail -c
+
+ifeq ($(UNAME),Darwin)
+     SHELL := /opt/local/bin/bash
+     OS_X  := true
+else ifneq (,$(wildcard /etc/redhat-release))
+     OS_RHEL := true
+else
+     OS_DEB  := true
+     SHELL := /bin/bash
+endif
+
+XEBRO_MODULES_DIR=./docker
+
+DOCKER_COMPOSE=docker compose
+DOCKER_FILES=$(shell find . -maxdepth 3 -type f,l -name "docker-compose.y*ml" | sort | sed 's/^/-f /')
+
+USER_UID=$(shell id -u)
+USER_GID=$(shell id -g)
+
+ifndef (APP_ENV)
+	APP_ENV=prod
+endif
+
+-include .env
+-include .env.*
+-include ${XEBRO_MODULES_DIR}/*/Makefile
+
+
+ifneq ('$(wildcard ./bin/Makefile)', '')
+	-include ./bin/Makefile
+endif
+
+
+.PHONY: help $(MAKEFILE_LIST) start stop build install config delete
+XEBRO_ROOT_DIR:=$(shell pwd)
+
+export
+
+################################################
+
+start: ## start development environment
+
+stop: ## stop development environment
+
+install: ## init project and install all dependencies
+
+build:
+
+help:
+	$(call add_help,./Makefile,"xebro")
+
+test:
+	@echo ${MAKEFILE_LIST}
