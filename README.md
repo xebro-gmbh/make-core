@@ -24,8 +24,8 @@ Install the core modes as git submodule, and then just symlink the `main_file` t
 
 ```bash
 mkdir -p docker
-git submodule git@github.com:xebro-gmbh/core.git docker/core
-ln -s docker/core/main_file Makefile
+git submodule add git@github.com:xebro-gmbh/make-core.git docker/core
+ln -sf docker/core/main_file Makefile
 ```
 
 ### local domain
