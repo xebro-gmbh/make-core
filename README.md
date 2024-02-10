@@ -28,6 +28,16 @@ git submodule git@github.com:xebro-gmbh/core.git docker/core
 ln -s docker/core/main_file Makefile
 ```
 
+### local domain
+Im using a local domain for development `dev.local`, wich needs to be entered into your `/etc/hosts` file
+
+```
+127.0.0.1 dev.local
+```
+
+I don't like scripts messing with system relevat files, so i didn't create a make command for it and maybe never will.
+
+
 ### Init bundles
 Install all environment variables (written to .env or .gitiognore), the targets can be run multiple times.
 
