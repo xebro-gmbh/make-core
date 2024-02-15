@@ -112,3 +112,9 @@ install: ## init project and install all dependencies
 build:
 help:
 ```
+
+### Init submodules
+
+```bash
+git submodule update --init --recursive
+```
