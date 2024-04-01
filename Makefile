@@ -1,5 +1,5 @@
 #--------------------------
-# xebro GmbH - Make Core - 0.0.1
+# xebro GmbH - Make Core - 0.0.2
 #--------------------------
 .PHONY: .dockerignore
 
