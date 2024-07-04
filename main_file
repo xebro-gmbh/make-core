@@ -18,7 +18,7 @@ endif
 XEBRO_MODULES_DIR=./docker
 
 DOCKER_COMPOSE=docker compose
-DOCKER_FILES=$(shell find . -maxdepth 3 -type f,l -name "docker-compose.y*ml" -o "compose.yaml" | sort | sed 's/^/-f /')
+DOCKER_FILES=$(shell find . -maxdepth 3 -type f,l -name "docker-compose.y*ml" -o -name "compose.yaml" | sort | sed 's/^/-f /')
 
 USER_UID=$(shell id -u)
 USER_GID=$(shell id -g)
