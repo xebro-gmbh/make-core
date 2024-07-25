@@ -1,0 +1,13 @@
+{
+    "name": "xebro-gmbh/make-core",
+    "description": "Makefiles for development environment setup",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "DAN",
+            "email": "dan@xebro.de"
+        }
+    ],
+    "require": {}
+}
