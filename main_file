@@ -15,7 +15,7 @@ else
      SHELL := /bin/bash
 endif
 
-XEBRO_MODULES_DIR=./docker
+XEBRO_MODULES_DIR=./xo
 
 DOCKER_COMPOSE=docker compose
 DOCKER_FILES=$(shell find . -maxdepth 3 -type f,l -name "docker-compose.y*ml" -o -name "compose.yaml" | sort | sed 's/^/-f /')
@@ -29,6 +29,7 @@ endif
 
 -include .env
 -include .env.*
+-include ./vendor/xebro-gmbh/*/Makefile
 -include ${XEBRO_MODULES_DIR}/*/Makefile
 
 
