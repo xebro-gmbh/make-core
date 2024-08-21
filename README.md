@@ -23,13 +23,14 @@ Those are only Makefiles, organized in Subfolder, with the least possible amount
 Install the core modes as git submodule, and then just symlink the `main_file` to the project root directory as `Makefile`
 
 ```bash
-mkdir -p docker
-git submodule add git@github.com:xebro-gmbh/make-core.git docker/core
+mkdir -p xo
+composer require xebro-gmbh/make-core --dev
 ln -sf docker/core/main_file Makefile
 ```
 
 ### local domain
-Im using a local domain for development `dev.local`, wich needs to be entered into your `/etc/hosts` file
+Im using a local domain for development `dev.local`, wich needs to be entered into your `/etc/hosts` file.
+Add this line after all other entries, the sorting doesn't matter here.
 
 ```
 127.0.0.1 dev.local
