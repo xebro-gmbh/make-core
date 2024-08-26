@@ -66,7 +66,8 @@ core.install: ## Add all required entries to the .gitignore
 	$(call add_config,.env,${XEBRO_MODULES_DIR}/core/.env)
 	@touch -- .env.local
 
-docker/%:
-	git submodule add git@github.com:xebro-gmbh/make-$*.git docker/$*
-
 install: core.install
+
+help: core.help
+
+

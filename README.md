@@ -25,7 +25,7 @@ Install the core modes as git submodule, and then just symlink the `main_file` t
 ```bash
 mkdir -p xo
 composer require xebro-gmbh/make-core --dev
-ln -sf docker/core/main_file Makefile
+ln -sf vendor/xebro-gmbh/make-core/main_file Makefile
 ```
 
 ### local domain
@@ -119,3 +119,4 @@ help:
 ```bash
 git submodule update --init --recursive
 ```
+
