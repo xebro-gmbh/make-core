@@ -1,4 +1,4 @@
-Xebro Make bundle
+xebro Make bundle
 ====
 
 Makefiles organized in bundles (subfolders) for an easy development environment setup and handling.
@@ -20,60 +20,30 @@ Those are only Makefiles, organized in Subfolder, with the least possible amount
 
 
 ## Install
-Install the core modes as git submodule, and then just symlink the `main_file` to the project root directory as `Makefile`
+Install the core modes as git submodule, and then just symlink the `main_file` to the project root directory as `Makefile`.
+All windows user need to copy the file instead of symlinking, because symlinking in windows is not possible.
+
 
 ```bash
-mkdir -p xo
-composer require xebro-gmbh/make-core --dev
-ln -sf vendor/xebro-gmbh/make-core/main_file Makefile
+mkdir -p docker
+git clone https://github.com/xebro-gmbh/make-core.git docker/core
+ln -sf docker/core/main_file Makefile
 ```
 
-### local domain
-Im using a local domain for development `dev.local`, wich needs to be entered into your `/etc/hosts` file.
-Add this line after all other entries, the sorting doesn't matter here.
-
-```
-127.0.0.1 dev.local
+```bash
+cp docker/core/main_file Makefile
 ```
 
-I don't like scripts messing with system relevat files, so i didn't create a make command for it and maybe never will.
-
-
-### Init bundles
+### Quick  start
 Install all environment variables (written to .env or .gitiognore), the targets can be run multiple times.
 
 ```bash
 make install
+make init
 ```
-
 
 ## Bundles
 
-#### Installing plugins
-
-All bundles (besides the core one), can be installed when required. When you need a PHP development environment
-than you would go with
-
-```bash
-make docker/docker
-make docker/nginx-php
-make docker/php-fpm
-make docker/traefik
-make install
-make start
-```
-
-
-#### All available bundles 
-```bash
-make docker/docker
-make docker/mailcatcher
-make docker/mariadb
-make docker/nginx-php
-make docker/node
-make docker/php-fpm
-make docker/traefik
-```
 
 
 ### Help
@@ -90,9 +60,10 @@ This will ouput all available command.
 ### Custom bundles
 
 You want to add your own Makefile targets, then just create a Makefile in the folder `./bin` and 
-this file will be included too.
+this file is included by default.
 
 Add to the Makefile in `./bin/Makefile`
+
 ```Makefile
 custom.test:
 	echo "test"
@@ -101,6 +72,7 @@ install: custom.test
 ```
 
 and now your command will output the string "test", when you run `make install`.
+
 
 ### Makefile Hooks
 
@@ -113,10 +85,3 @@ install: ## init project and install all dependencies
 build:
 help:
 ```
-
-### Init submodules
-
-```bash
-git submodule update --init --recursive
-```
-

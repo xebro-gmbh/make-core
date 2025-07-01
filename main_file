@@ -1,14 +1,15 @@
 #--------------------------
-# xebro GmbH - Makefile - 1.0.2
+# xebro GmbH - Makefile - 1.0.3
 #--------------------------
-
 .ONESHELL:
-.SHELLFLAGS := -eu -o pipefail -c
-.PHONY: help $(MAKEFILE_LIST) start stop build install config delete
-XEBRO_ROOT_DIR:=$(shell pwd)
-XEBRO_MODULES_DIR=./xo
+.SHELLFLAGS := -eu -c
+.PHONY: help $(MAKEFILE_LIST) start stop build install
+XO_ROOT_DIR=$(shell pwd)
+XO_MODULES_DIR=./docker
+XO_CORE_VERSION=1.0.1
+CFLAGS=-g
+export CFLAGS
 
-DOCKER_COMPOSE=docker compose
 
 ifeq ($(UNAME),Darwin)
      SHELL := /opt/local/bin/bash
@@ -22,41 +23,38 @@ endif
 
 USER_UID=$(shell id -u)
 USER_GID=$(shell id -g)
+
 APP_ENV=prod
 
+
 -include .env
--include .env.*
+-include .env.local
 
+COMPOSE_FILES=$(shell find ${XO_MODULES_DIR} -type f -name "compose.yaml" | sort | sed 's/^/-f /')
 
-ifneq ('$(wildcard ./vendor/xebro-gmbh/)', '')
-    DOCKER_FILES=$(shell find ${XEBRO_MODULES_DIR} ./vendor/xebro-gmbh -maxdepth 3 -type f,l -name "docker-compose.y*ml" -o -name "compose.yaml" | sort | sed 's/^/-f /')
-else
-    DOCKER_FILES=$(shell find ${XEBRO_MODULES_DIR} -maxdepth 3 -type f,l -name "docker-compose.y*ml" -o -name "compose.yaml" | sort | sed 's/^/-f /')
-endif
-
+DOCKER_COMPOSE=docker compose ${COMPOSE_FILES}
 export
 
 #### end of configuring the app, start using the variables
 
--include ./vendor/xebro-gmbh/*/Makefile
--include "${XEBRO_MODULES_DIR}/*/Makefile"
 
+-include ${XO_MODULES_DIR}/*/Makefile
+-include bin/Makefile
 
 #### starting hooks for other makefiles
 
-start: ## start development environment
+start: post_start ## start development environment
+post_start:
 
 stop: ## stop development environment
 
 install: ## init project and install all dependencies
 
+test: ## Run tests to verify app is running as expected
+
 build:
 
 help:
-	@echo ${MAKEFILE_LIST}
 	$(call add_help,./Makefile,"xebro")
 
-test:
-	@echo ${MAKEFILE_LIST}
-	@echo ${XEBRO_MODULES_DIR}
-	@echo ${XEBRO_ROOT_DIR}
+debug:

@@ -1,6 +1,12 @@
 #!/usr/bin/env php
 <?php
 
+declare(strict_types=1);
+
+const SEARCH_FIRST = 0;
+const SEARCH_SECOND = 1;
+const SEARCH_MATCHED = 2;
+
 $destinationFile = $argv[1];
 $srcFile = $argv[2];
 $newPattern = $argv[3] ?? '## ----- %s ------';
@@ -10,18 +16,17 @@ if (!$handle) {
     exit('Could not open file');
 }
 
-$mode = 'search_first';
+$mode = SEARCH_FIRST;
 $newContent = '';
 $lastLine = '';
-
 
 while (($line = fgets($handle)) !== false) {
     $lineDelimiter = sprintf($newPattern, $srcFile);
 
     switch ($mode) {
-        case 'search_first':
+        case SEARCH_FIRST:
             if ($lineDelimiter === trim($line)) {
-                $mode = 'search_second';
+                $mode = SEARCH_SECOND;
                 break;
             }
 
@@ -32,14 +37,14 @@ while (($line = fgets($handle)) !== false) {
             $lastLine = trim($line);
             break;
 
-        case 'search_second':
+        case SEARCH_SECOND:
             if ($lineDelimiter === trim($line)) {
-                $mode = 'matched';
+                $mode = SEARCH_MATCHED;
                 $newContent .= printContent($srcFile, $newPattern);
             }
             break;
 
-        case 'matched':
+        case SEARCH_MATCHED:
             if ('' === trim($line) && trim($line) === $lastLine) {
                 break;
             }
@@ -49,7 +54,7 @@ while (($line = fgets($handle)) !== false) {
     }
 }
 
-if ('search_first' === $mode) {
+if (SEARCH_FIRST === $mode) {
     $newContent .= printContent($srcFile, $newPattern);
 }
 
@@ -59,13 +64,13 @@ file_put_contents($destinationFile, $newContent);
 
 function printContent(string $file, $pattern)
 {
-    $text = "\n".sprintf($pattern, $file)."\n";
-    ob_start();
-    include $file;
-    $text .= trim(ob_get_contents());
-    ob_get_clean();
-    $text .= "\n".sprintf($pattern, $file);
-    $text .="\n\n";
+    $text = "\n" . sprintf($pattern, $file) . "\n";
+
+    $command = "envsubst <" . $file ;
+    $text .= trim(shell_exec($command));
+
+    $text .= "\n" . sprintf($pattern, $file);
+    $text .= "\n\n";
 
     return $text;
 }
