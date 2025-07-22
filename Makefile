@@ -41,7 +41,7 @@ On_White=\033[47m
 
 define add_config
 	@echo -e "${Gray}Adding config from ${Yellow}$2${Gray} to ${Yellow}$1${Color_Off}"
-	@./${XO_MODULES_DIR}/make-core/add_code_block.php $(1) $(2) $(3)
+	@./${XO_MODULES_DIR}/core/add_code_block.php $(1) $(2) $(3)
 endef
 
 define add_help
@@ -63,13 +63,13 @@ endef
 core.install: ## Add all required entries to the .gitignore
 	@mkdir -p ${XO_MODULES_DIR}
 	$(call headline,"Installing Core")
-	$(call add_config,.gitignore,${XO_MODULES_DIR}/make-core/.gitignore)
-	$(call add_config,.env,${XO_MODULES_DIR}/make-core/.env)
+	$(call add_config,.gitignore,${XO_MODULES_DIR}/core/.gitignore)
+	$(call add_config,.env,${XO_MODULES_DIR}/core/.env)
 	@touch -- .env.local
 
 core.docker-ignore:
 	@touch .dockerignore
-	$(call add_config,".dockerignore","${XO_MODULES_DIR}/make-core/.dockerignore")
+	$(call add_config,".dockerignore","${XO_MODULES_DIR}/core/.dockerignore")
 
 core.debug:
 	@$(call headline,"DEBUGGING Core")
@@ -79,8 +79,6 @@ core.debug:
 	@printf "${Purple}DOMAIN: ${Yellow} https://${DOMAIN}\n"
 	@printf "${Purple}MERCURE_PUBLIC_URL: ${Yellow} ${MERCURE_PUBLIC_URL}\n"
 	@printf "${Purple}MERCURE_URL: ${Yellow} ${MERCURE_URL}\n"
-	@printf "${Purple}SENTRY_DSN: ${Yellow} ${SENTRY_DSN}\n"
-	@printf "${Purple}SENTRY_ENVIRONMENT: ${Yellow} ${SENTRY_ENVIRONMENT}\n"
 	@printf "${Purple}VERSION: ${Yellow} ${VERSION}\n"
 	@printf "${Purple}XO_MODULES_DIR: ${Yellow} ${XO_MODULES_DIR}\n"
 	@printf "${Purple}XO_PROJECT_NAME: ${Yellow} ${XO_PROJECT_NAME}\n"

@@ -3,10 +3,10 @@ xebro Make bundle
 
 Makefiles organized in bundles (subfolders) for an easy development environment setup and handling.
 
-Ive seen full fledged development environments written in Python, Php etc... which needs to be maintained
+I've seen full fledged development environments written in Python, Php etc... which needs to be maintained
 by a developer in full time.
 
-Most of my project are at a POC level or small (maybe micro) sizes website, where i want to test something.
+Most of my project are at a POC level or small (maybe micro) sizes website, where I want to test something.
 Now the `xebro Makefiles` come in handy.
 
 Those are only Makefiles, organized in Subfolder, with the least possible amount of a programming language.
