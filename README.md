@@ -110,3 +110,15 @@ install: ## init project and install all dependencies
 build:
 help:
 ```
+
+### ./docker folder layout
+
+The repository keeps service-specific make bundles under `./docker`. Each folder includes a `Makefile` (exposed via `make docker/<bundle>`), a `compose.yaml`, and usually a `Dockerfile` plus helpers (`README.md`, `etc/`, `scripts/`) for configuring the service.
+
+- `docker/`: the docker bundle that `make docker/docker` installs, including the shared Compose network.
+- `localstack/`: LocalStack runtime with credentials and scripts for AWS API mocking.
+- `mailcatcher/`: SMTP inbox catcher service that is reusable for feature previews.
+- `node/`: Node/npm environment (with supplementary `etc/`) used by frontend tooling.
+- `php/`: PHP-FPM environment (plus supervisor/config helpers) that runs the backend stack.
+- `postgres/`: PostgreSQL server bundle with schema-ready compose settings.
+- `proxy/`: Proxy/Traefik bundle that wires routing, certificates and networking.

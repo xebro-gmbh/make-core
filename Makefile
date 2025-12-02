@@ -60,6 +60,11 @@ define headline
 	@echo -e "${Yellow}___${Black}${On_Yellow} ${1} ${Color_Off}${Yellow}_________________________${Color_Off}"
 endef
 
+define target_name
+	@echo ""
+	@echo -e "\n\n${Gray}____________________________ ${1} ${Color_Off}\n"
+endef
+
 core.install: ## Add all required entries to the .gitignore
 	@mkdir -p ${XO_MODULES_DIR}
 	$(call headline,"Installing Core")
@@ -74,6 +79,23 @@ core.docker-ignore:
 core.debug:
 	@$(call headline,"DEBUGGING Core")
 	@printf "running debug for ${Yellow} xebro Makefile\n\n"
+	@printf "${Purple}Environment variables from .env / .env.local:${Color_Off}\n"
+	@set -a ; \
+		[ -f .env ] && . .env ; \
+		[ -f .env.local ] && . .env.local ; \
+		set +a ; \
+		VAR_LIST=$$(cat .env .env.local 2>/dev/null | \
+			grep -E '^[[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*=' | \
+			sed -E 's/^[[:space:]]*(export[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)=.*/\2/' | \
+			sort -u) ; \
+		if [ -n "$$VAR_LIST" ]; then \
+			for var in $$VAR_LIST; do \
+				value=$$(printenv "$$var") ; \
+				printf "  ${Purple}%s:${Yellow} %s${Color_Off}\n" "$$var" "$$value" ; \
+			done ; \
+		else \
+			printf "  ${Yellow}No variables defined in .env or .env.local${Color_Off}\n" ; \
+		fi
 	@printf "${Purple}APP_ENV: ${Yellow} ${APP_ENV}\n"
 	@printf "${Purple}DATABASE_URL: ${Yellow} ${DATABASE_URL}\n"
 	@printf "${Purple}DOMAIN: ${Yellow} https://${DOMAIN}\n"
