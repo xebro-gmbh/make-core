@@ -248,8 +248,15 @@ make compose.regenerate
 
 ### Requirements
 
-- **yq v4+** required for YAML merging
-- Install: `brew install yq` (macOS) or see [yq releases](https://github.com/mikefarah/yq/releases)
+The core bundle expects the following host tools to be available before running any `docker/` targets:
+
+- `bash` (POSIX sh is not enough; the scripts rely on Bash 4+ features such as `mapfile`, `shopt`, and arrays).
+- `make` for the entrypoint (`Makefile` in the repo root) plus every module target.
+- `docker` (Engine and CLI) with Compose support (`docker compose` or a compatible `docker-compose` executable that can be referenced via `DOCKER_COMPOSE`).
+- `yq v4+` for merging `compose.*.yaml` fragments into each module’s generated `compose.yaml`.
+  - Install: `brew install yq` (macOS) or see [yq releases](https://github.com/mikefarah/yq/releases).
+- `envsubst` (part of the GNU `gettext` package) because the configuration helpers expand variable placeholders when migrating `.env` entries.
+  - macOS: `brew install gettext` (and `brew link --force gettext` if needed); Linux: `sudo apt install gettext-base` or equivalent.
 
 ## License
 
