@@ -54,3 +54,9 @@ Because Make uses prerequisites you never overwrite core targets: you simply cha
 ## Related Bundles
 
 Most common bundles are already checked into this repository (`docker/php`, `docker/node`, `docker/postgres`, `docker/localstack`, `docker/mailcatcher`, `docker/etc`). You can also import other public bundles (for example `make-docker`, `make-traefik`, or any bundle you create) as long as their `Makefile` follows the same conventions—drop them under `docker/<name>` and the core will wire them in automatically.
+
+## License
+
+This make bundle is provided under the MIT License. See the [LICENSE](./LICENSE) file for details.
+
+Copyright (c) 2025 xebro GmbH
