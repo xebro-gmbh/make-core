@@ -50,12 +50,12 @@ define target_name
 endef
 
 core.install: ## Add all required entries to the .gitignore
-	@mkdir -p ${XO_MODULES_DIR}/etc
+	@mkdir -p ${XO_CONFIG_DIR}
 	$(call headline,"Installing Core")
-	$(call ensure_lines,.gitignore,${CORE_DIR}.gitignore)
-	$(call ensure_env_vars,.env,${CORE_DIR}.env)
+	$(call ensure_lines,.gitignore,${CORE_DIR}config/.gitignore)
+	$(call ensure_env_vars,.env,${CORE_DIR}config/.env)
 	@touch -- .env.local
-	$(call ensure_file,${CORE_DIR}/config.env,${XO_CONFIG_DIR})
+	$(call ensure_file,${CORE_DIR}config/config.env,${XO_CONFIG_DIR})
 
 # @see https://docs.docker.com/compose/environment-variables/envvars/
 export COMPOSE_PROJECT_NAME=${XO_PROJECT_NAME}
@@ -101,6 +101,10 @@ docker.restart:
 	@docker stop $$(docker ps -aq) | xargs docker rm
 	@${DOCKER_COMPOSE} up -d
 
+core.generate: ## Generate compose.yaml files from base + module files
+	$(call target_name,$@)
+	@bash ${XO_MODULES_DIR}/core/generate_compose.sh
+
 core.docker-ignore:
 	@touch .dockerignore
 	$(call ensure_lines,".dockerignore","${CORE_DIR}.dockerignore")
@@ -129,6 +133,7 @@ debug: core.debug
 help: core.help
 init: docker.network
 install: core.install core.docker-ignore
+post_install: core.generate
 logs: docker.logs
 restart: docker.restart
 start: docker.up

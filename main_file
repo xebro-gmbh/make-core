@@ -8,7 +8,7 @@
 XO_CORE_VERSION=1.0.4
 XO_ROOT_DIR=$(shell pwd)
 XO_MODULES_DIR=./docker
-XO_CONFIG_DIR=${XO_MODULES_DIR}/etc
+XO_CONFIG_DIR=${XO_MODULES_DIR}/config
 
 CFLAGS=-g
 export CFLAGS
@@ -52,7 +52,8 @@ post_start:
 
 stop: ## stop development environment
 
-install: ## init project and install all dependencies
+install: post_install ## init project and install all dependencies
+post_install:
 
 test: ## Run tests to verify app is running as expected
 

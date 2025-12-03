@@ -15,6 +15,9 @@
    ```bash
    mkdir -p docker
    git clone https://github.com/xebro-gmbh/make-core.git docker/core
+   git clone git@github.com:xebro-gmbh/make-mailcatcher.git docker/mailcatcher
+   git clone git@github.com:xebro-gmbh/make-node.git docker/node
+   git clone git@github.com:xebro-gmbh/make-apache-php.git docker/php
    ```
 2. Make the root `Makefile` point to the `main_file` (symlink preferred, copy as fallback for Windows/WSL2):
    ```bash
@@ -30,6 +33,159 @@
    ```
 
 These steps are idempotent; you can re-run them after pulling new code.
+
+## QuickStart: Web Developer Environment
+
+This QuickStart tutorial shows you how to set up a complete web development environment with **PHP (Symfony)**, **Node.js (React/Vue)**, **PostgreSQL**, and **Mailcatcher**.
+
+### Prerequisites
+
+- Docker and Docker Compose installed
+- Git installed
+- A new or existing project repository
+
+### Step 1: Set up Core and Modules
+
+Create the directory structure and install the required bundle modules:
+
+```bash
+# Create project directory (if new)
+mkdir my-webapp && cd my-webapp
+git init
+
+# Install Core Bundle
+mkdir -p docker
+git clone https://github.com/xebro-gmbh/make-core.git docker/core
+
+# Link Makefile
+ln -sf docker/core/main_file Makefile
+
+# Copy modules (from an existing repository or manually)
+# Required modules: php, node, postgres, mailcatcher, etc
+# These should already be present under docker/*
+```
+
+### Step 2: Initialize Environment
+
+Set your project name and initialize the environment (the Docker network will be created automatically):
+
+```bash
+# Set project name in .env (e.g. XO_PROJECT_NAME=my-webapp)
+echo "XO_PROJECT_NAME=my-webapp" > .env
+```
+
+Run the installation and initialization steps:
+
+```bash
+# Create environment variables and configuration files
+make install
+
+# Install dependencies (Composer, npm), run database migrations
+make init
+
+# Start all services
+make start
+```
+
+### Step 3: What's Available Now?
+
+After a successful start, you have the following services:
+
+| Service | URL/Port | Description |
+|---------|----------|-------------|
+| **PHP/Symfony** | `http://localhost:80` | Symfony API backend with PHP-FPM and Nginx |
+| **Node.js** | `http://localhost:3000` | React/Vue development server with hot-reload |
+| **PostgreSQL** | `localhost:5432` | Database (User: `app`, Password: `app`, DB: `symfony`) |
+| **Mailcatcher** | `http://localhost:1080` | Email web interface for testing emails |
+
+### Step 4: Development Workflow
+
+**Backend (PHP/Symfony):**
+```bash
+# Open shell in PHP container
+make php.bash
+
+# Execute Symfony console commands
+make php.cmd cmd="cache:clear"
+
+# Run database migrations
+make php.migrate
+
+# Load test data
+make php.fixtures
+
+# Run tests
+make php.test
+
+# Check code quality
+make php.verify
+```
+
+**Frontend (Node.js):**
+```bash
+# Open shell in Node container
+make node.bash
+
+# Install/update npm packages
+make node.init
+
+# Build for production
+make node.build
+
+# Run tests
+make node.run TARGET=test
+```
+
+**Database (PostgreSQL):**
+```bash
+# Open PostgreSQL console
+make postgres.console
+
+# Export database
+make postgres.export
+
+# Show logs
+make postgres.logs
+```
+
+**Email Testing (Mailcatcher):**
+```bash
+# Open web interface
+open http://localhost:1080
+
+# SMTP server for your application: mailcatcher:1025 (inside Docker)
+# or localhost:1025 (from host)
+```
+
+### Step 5: Stop Everything
+
+```bash
+# Stop all services
+make stop
+
+# Restart services
+make restart
+```
+
+### Help and Available Commands
+
+Show all available Make targets:
+```bash
+make help
+```
+
+### Common Issues
+
+**Services won't start:**
+- Check if Docker network exists: `docker network ls`
+- Check if ports are already in use: `lsof -i :80` / `lsof -i :3000`
+
+**Database connection failed:**
+- Wait until PostgreSQL is ready: `make postgres.logs`
+- Check `.env` for correct `DATABASE_URL`
+
+**Node modules not found:**
+- Run `make node.init` to install npm packages
 
 ## Customisation Hooks
 
@@ -54,6 +210,46 @@ Because Make uses prerequisites you never overwrite core targets: you simply cha
 ## Related Bundles
 
 Most common bundles are already checked into this repository (`docker/php`, `docker/node`, `docker/postgres`, `docker/localstack`, `docker/mailcatcher`, `docker/etc`). You can also import other public bundles (for example `make-docker`, `make-traefik`, or any bundle you create) as long as their `Makefile` follows the same conventions—drop them under `docker/<name>` and the core will wire them in automatically.
+
+## Compose File Generation
+
+This system uses modular compose files that are dynamically merged based on installed modules:
+
+- **`compose.base.yaml`** - Core service definition without optional dependencies
+- **`compose.<module>.yaml`** - Adds `depends_on` for a specific module
+- **`compose.yaml`** - Generated file (gitignored)
+
+### How It Works
+
+When you run `make install` or `make compose.generate`, the system:
+1. Scans each module directory for `compose.base.yaml`
+2. Checks which optional dependency modules are installed
+3. Merges relevant `compose.<module>.yaml` files using `yq`
+4. Generates the final `compose.yaml`
+
+### Example: PHP Module
+
+```
+docker/php/
+  ├── compose.base.yaml        # PHP service without dependencies
+  ├── compose.postgres.yaml    # Adds postgres dependency
+  ├── compose.localstack.yaml  # Adds localstack dependency
+  └── compose.yaml             # Generated (merged result)
+```
+
+If both postgres and localstack modules are installed, the PHP service will depend on both. If only postgres is installed, PHP will only depend on postgres.
+
+### Manual Regeneration
+
+To regenerate compose files manually:
+```bash
+make compose.regenerate
+```
+
+### Requirements
+
+- **yq v4+** required for YAML merging
+- Install: `brew install yq` (macOS) or see [yq releases](https://github.com/mikefarah/yq/releases)
 
 ## License
 
