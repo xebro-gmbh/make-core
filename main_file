@@ -1,12 +1,15 @@
 #--------------------------
-# xebro GmbH - Makefile - 1.0.3
+# xebro GmbH - Makefile - 1.0.4
 #--------------------------
 .ONESHELL:
 .SHELLFLAGS := -eu -c
 .PHONY: help $(MAKEFILE_LIST) start stop build install
+
+XO_CORE_VERSION=1.0.4
 XO_ROOT_DIR=$(shell pwd)
 XO_MODULES_DIR=./docker
-XO_CORE_VERSION=1.0.1
+XO_CONFIG_DIR=${XO_MODULES_DIR}/etc
+
 CFLAGS=-g
 export CFLAGS
 
@@ -28,11 +31,12 @@ APP_ENV=prod
 
 
 -include .env
+-include ${XO_MODULES_DIR}/etc/config.env
 -include .env.local
 
 COMPOSE_FILES=$(shell find ${XO_MODULES_DIR} -type f -name "compose.yaml" | sort | sed 's/^/-f /')
-
 DOCKER_COMPOSE=docker compose ${COMPOSE_FILES}
+
 export
 
 #### end of configuring the app, start using the variables

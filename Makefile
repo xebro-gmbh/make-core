@@ -1,47 +1,31 @@
 #--------------------------
-# xebro GmbH - Make Core - 1.0.2
+# xebro GmbH - Make Core - 1.0.3
 #--------------------------
-.PHONY: .dockerignore
+.PHONY: .dockerignore docker.build docker.init
+
+CORE_DIR := $(patsubst $(XO_ROOT_DIR)/%,./%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+CORE := $(notdir $(patsubst %/,%,$(CORE_DIR)))
 
 ## from https://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
-## thx
-# Reset
-Color_Off=\033[0m
+-include $(CORE_DIR)colors.mk
 
-# Regular Colors
-Black=\033[0;30m
-Gray=\033[1;30m
-Red=\033[0;31m
-Green=\033[0;32m
-Yellow=\033[0;33m
-Blue=\033[0;34m
-Purple=\033[0;35m
-Cyan=\033[0;36m
-White=\033[0;37m
+# ensure each line from $2 is present in $1, appending missing lines in order
+define ensure_lines
+	@${CORE_DIR}ensure_helpers.sh ensure_lines "$(1)" "$(2)"
+endef
 
-# Underline
-UBlack=\033[4;30m
-URed=\033[4;31m
-UGreen=\033[4;32m
-UYellow=\033[4;33m
-UBlue=\033[4;34m
-UPurple=\033[4;35m
-UCyan=\033[4;36m
-UWhite=\033[4;37m
+define ensure_file
+	@set -e; \
+	FILENAME=$(notdir $(1)); \
+	printf "%b\n" "${Gray}Copy file ${Cyan}${2}/$$FILENAME ${Color_Off}"; \
+	[[ -f "$(2)/$$FILENAME" ]] || { \
+		cp "$(1)" "$(2)/$$FILENAME"; \
+	}
+endef
 
-# Background
-On_Black=\033[40m
-On_Red=\033[41m
-On_Green=\033[42m
-On_Yellow=\033[43m
-On_Blue=\033[44m
-On_Purple=\033[45m
-On_Cyan=\033[46m
-On_White=\033[47m
-
-define add_config
-	@echo -e "${Gray}Adding config from ${Yellow}$2${Gray} to ${Yellow}$1${Color_Off}"
-	@./${XO_MODULES_DIR}/core/add_code_block.php $(1) $(2) $(3)
+# ensure each env var definition from $2 exists in $1 after envsubst substitution; pass "force" as $3 to replace mismatched values
+define ensure_env_vars
+	@${CORE_DIR}ensure_helpers.sh ensure_env_vars "$(1)" "$(2)" "$(3)"
 endef
 
 define add_help
@@ -66,36 +50,65 @@ define target_name
 endef
 
 core.install: ## Add all required entries to the .gitignore
-	@mkdir -p ${XO_MODULES_DIR}
+	@mkdir -p ${XO_MODULES_DIR}/etc
 	$(call headline,"Installing Core")
-	$(call add_config,.gitignore,${XO_MODULES_DIR}/core/.gitignore)
-	$(call add_config,.env,${XO_MODULES_DIR}/core/.env)
+	$(call ensure_lines,.gitignore,${CORE_DIR}.gitignore)
+	$(call ensure_env_vars,.env,${CORE_DIR}.env)
 	@touch -- .env.local
+	$(call ensure_file,${CORE_DIR}/config.env,${XO_CONFIG_DIR})
+
+# @see https://docs.docker.com/compose/environment-variables/envvars/
+export COMPOSE_PROJECT_NAME=${XO_PROJECT_NAME}
+
+docker.build:
+	@${DOCKER_COMPOSE} build --build-arg USER_ID=$$(id -u) --build-arg GROUP_ID=$$(id -g) --build-arg UNAME=$$(whoami) --no-cache
+
+docker.logs: ## show logs for all container
+	@${DOCKER_COMPOSE} logs -f
+
+docker.up: docker.network ## Start all docker container for development
+	@${DOCKER_COMPOSE} up -d
+
+docker.stop: ## Stop all docker container for development
+	@${DOCKER_COMPOSE} stop --remove-orphans
+
+docker.down: ## Stop all docker container for development
+	@${DOCKER_COMPOSE} down --remove-orphans
+
+docker.clean: ## Remove all docker Container and clean up System
+	@${DOCKER_COMPOSE} down --remove-orphans
+	@docker images | awk '$$2 == "<none>" {print $$3}' | xargs docker image rm -f
+
+docker.kill: ## kill ALL docker container running on your Host
+	@docker stop $$(docker ps -aq) | xargs docker rm
+
+docker.pull: ## Update all docker container
+	@${DOCKER_COMPOSE} pull
+
+docker.cmd.cmd:
+	@${DOCKER_COMPOSE} $$CMD
+
+docker.network: ## create docker network
+	@docker network inspect ${XO_PROJECT_NAME} >/dev/null 2>&1 || docker network create ${XO_PROJECT_NAME}
+
+docker.config.dev: ## Show docker compose config
+	@${DOCKER_COMPOSE} config
+
+core.help:
+	$(call add_help,${CORE_DIR}Makefile,"core")
+
+docker.restart:
+	@docker stop $$(docker ps -aq) | xargs docker rm
+	@${DOCKER_COMPOSE} up -d
 
 core.docker-ignore:
 	@touch .dockerignore
-	$(call add_config,".dockerignore","${XO_MODULES_DIR}/core/.dockerignore")
+	$(call ensure_lines,".dockerignore","${CORE_DIR}.dockerignore")
 
 core.debug:
 	@$(call headline,"DEBUGGING Core")
 	@printf "running debug for ${Yellow} xebro Makefile\n\n"
-	@printf "${Purple}Environment variables from .env / .env.local:${Color_Off}\n"
-	@set -a ; \
-		[ -f .env ] && . .env ; \
-		[ -f .env.local ] && . .env.local ; \
-		set +a ; \
-		VAR_LIST=$$(cat .env .env.local 2>/dev/null | \
-			grep -E '^[[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*=' | \
-			sed -E 's/^[[:space:]]*(export[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)=.*/\2/' | \
-			sort -u) ; \
-		if [ -n "$$VAR_LIST" ]; then \
-			for var in $$VAR_LIST; do \
-				value=$$(printenv "$$var") ; \
-				printf "  ${Purple}%s:${Yellow} %s${Color_Off}\n" "$$var" "$$value" ; \
-			done ; \
-		else \
-			printf "  ${Yellow}No variables defined in .env or .env.local${Color_Off}\n" ; \
-		fi
+	@printf "${Purple}COMPONENT: ${Yellow} ${CORE}\n"
 	@printf "${Purple}APP_ENV: ${Yellow} ${APP_ENV}\n"
 	@printf "${Purple}DATABASE_URL: ${Yellow} ${DATABASE_URL}\n"
 	@printf "${Purple}DOMAIN: ${Yellow} https://${DOMAIN}\n"
@@ -106,15 +119,17 @@ core.debug:
 	@printf "${Purple}XO_PROJECT_NAME: ${Yellow} ${XO_PROJECT_NAME}\n"
 	@printf "${Purple}XO_ROOT_DIR: ${Yellow} ${XO_ROOT_DIR}\n"
 
-
-install: core.install
-
 git.clean:
 	git branch -r --merged main | grep -v main | sed 's/origin\///' | xargs git push origin -d
 	git branch --merged main | grep -v production | grep -v main | xargs git branch -D
 
-debug: core.debug
-
-clean: git.clean
 .dockerignore: core.docker-ignore
-install: core.docker-ignore
+clean: git.clean docker.clean
+debug: core.debug
+help: core.help
+init: docker.network
+install: core.install core.docker-ignore
+logs: docker.logs
+restart: docker.restart
+start: docker.up
+stop: docker.down
