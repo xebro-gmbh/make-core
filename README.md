@@ -15,9 +15,6 @@ This is the main repository for the dev-setup make bundles. Every other folder i
    ```bash
    mkdir -p docker
    git clone https://github.com/xebro-gmbh/make-core.git docker/core
-   git clone git@github.com:xebro-gmbh/make-mailcatcher.git docker/mailcatcher
-   git clone git@github.com:xebro-gmbh/make-node.git docker/node
-   git clone git@github.com:xebro-gmbh/make-apache-php.git docker/php
    ```
 2. Make the root `Makefile` point to the `main_file` (symlink preferred, copy as fallback for Windows/WSL2):
    ```bash
@@ -51,18 +48,16 @@ Create the directory structure and install the required bundle modules:
 ```bash
 # Create project directory (if new)
 mkdir my-webapp && cd my-webapp
-git init
 
 # Install Core Bundle
 mkdir -p docker
 git clone https://github.com/xebro-gmbh/make-core.git docker/core
+git clone git@github.com:xebro-gmbh/make-mailcatcher.git docker/mailcatcher
+git clone git@github.com:xebro-gmbh/make-node.git docker/node
+git clone git@github.com:xebro-gmbh/make-apache-php.git docker/php
 
 # Link Makefile
 ln -sf docker/core/main_file Makefile
-
-# Copy modules (from an existing repository or manually)
-# Required modules: php, node, postgres, mailcatcher, etc
-# These should already be present under docker/*
 ```
 
 ### Step 2: Initialize Environment
@@ -91,12 +86,12 @@ make start
 
 After a successful start, you have the following services:
 
-| Service | URL/Port | Description |
-|---------|----------|-------------|
-| **PHP/Symfony** | `http://localhost:80` | Symfony API backend with PHP-FPM and Nginx |
-| **Node.js** | `http://localhost:3000` | React/Vue development server with hot-reload |
-| **PostgreSQL** | `localhost:5432` | Database (User: `app`, Password: `app`, DB: `symfony`) |
-| **Mailcatcher** | `http://localhost:1080` | Email web interface for testing emails |
+| Service         | URL/Port                | Description                                            |
+|-----------------|-------------------------|--------------------------------------------------------|
+| **PHP**         | `http://localhost:80`   | PHP running with an apache2 webserver                  |
+| **Node.js**     | `http://localhost:3000` | React/Vue development server with hot-reload           |
+| **PostgreSQL**  | `localhost:5432`        | Database (User: `app`, Password: `app`, DB: `symfony`) |
+| **Mailcatcher** | `http://localhost:1080` | Email web interface for testing emails                 |
 
 ### Step 4: Development Workflow
 
