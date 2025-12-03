@@ -1,6 +1,6 @@
-# Docker Core
+# xebro dev-setup
 
-`docker/core` is the main repository for the struktur8 make bundles. Every other folder inside `docker/` depends on this core and exposes its targets by letting the core `Makefile` include their definitions. The goal is to have a tiny, reproducible entrypoint that works for any proof-of-concept or small product without maintaining a bespoke CLI.
+This is the main repository for the dev-setup make bundles. Every other folder inside `docker/` depends on this core and exposes its targets by letting the core `Makefile` include their definitions. The goal is to have a tiny, reproducible entrypoint that works for any proof-of-concept or small product without maintaining a bespoke CLI.
 
 ## Core Principles
 
