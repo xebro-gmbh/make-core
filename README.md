@@ -1,112 +1,56 @@
-xebro Make bundle
-====
+# Docker Core
 
-Makefiles organized in bundles (subfolders) for an easy development environment setup and handling.
+`docker/core` is the main repository for the struktur8 make bundles. Every other folder inside `docker/` depends on this core and exposes its targets by letting the core `Makefile` include their definitions. The goal is to have a tiny, reproducible entrypoint that works for any proof-of-concept or small product without maintaining a bespoke CLI.
 
-I've seen full-fledged development environments written in Python, Php etc... that need to be maintained
-by a developer in full time.
+## Core Principles
 
-Most of my projects are at a POC level or small (maybe micro) sized website, where I want to test something.
-Now the `xebro Makefiles` come in handy.
+- **Makefile as API** – `main_file` is copied or symlinked to your project root and becomes the only command surface (`make install`, `make start`, etc.).
+- **Convention over scripting** – Targets rely on `.env`/`.env.local` plus helper files in `docker/etc` so you do not need wrapper scripts or ad-hoc shell glue.
+- **Composable bundles** – Any folder in `docker/` that ships a `Makefile` and `compose.yaml` is auto-discovered. Bundles can depend on each other (e.g., PHP expects Postgres and LocalStack) but all of them point back to this core.
+- **Self-documenting** – `make help` prints the merged target list so you can explore available commands without digging through files.
 
-Those are only Makefiles, organized in Subfolder, with the least possible amount of a programming language.
+## Installation
 
+1. Keep the core as a git submodule or copy it into `docker/core`:
+   ```bash
+   mkdir -p docker
+   git clone https://github.com/xebro-gmbh/make-core.git docker/core
+   ```
+2. Make the root `Makefile` point to the `main_file` (symlink preferred, copy as fallback for Windows/WSL2):
+   ```bash
+   ln -sf docker/core/main_file Makefile
+   # on Windows/WSL2 if symlinks are unavailable:
+   cp docker/core/main_file Makefile
+   ```
+3. Run the standard bootstrap sequence whenever you start a fresh checkout:
+   ```bash
+   make install   # ensure env vars and helper files exist
+   make init      # install app dependencies, run migrations, seed data
+   make start     # start docker-compose services from all enabled bundles
+   ```
 
-## Goals
-I want to make it easy to set up a development environment, and to run the project.
-I forget always about all the steps to set up a project, and I want to focus on the project itself.
+These steps are idempotent; you can re-run them after pulling new code.
 
-So I started to gather all required steps in a makefile and now here we are.
+## Customisation Hooks
 
+Adding project-specific commands is done through plain Makefiles:
 
-## Install
-Install the core modes as git submodule, and then just symlink the `main_file` to the project root directory as `Makefile`.
-All Windows users need to copy the file instead of creating a symlink, because symlinks in windows are not possible.
+1. Create `./bin/Makefile` (relative to your project root).
+2. Define your custom targets and prepend them to existing ones if you need hooks.
 
-```bash
-mkdir -p docker
-git clone https://github.com/xebro-gmbh/make-core.git docker/core
-ln -sf docker/core/main_file Makefile
-
-```
-
-On windows, but keep in mind that you will need to update this makefile manually
-
-```bash
-cp docker/core/main_file Makefile
-```
-
-### Quick start
-Install all environment variables (written to .env or .gitiognore), the targets can be run multiple times.
-
-```bash
-make install
-make init
-make start
-```
-
-`install` will add all environment variables to the `.env` file, and `init` will install all dependencies.
-`start` will start all docker containers.
-
-## Bundles
-    https://github.com/xebro-gmbh/make-docker
-    https://github.com/xebro-gmbh/make-mariadb
-    https://github.com/xebro-gmbh/make-php-fpm
-    https://github.com/xebro-gmbh/make-traefik
-    https://github.com/xebro-gmbh/make-node
-
-Any many more
-
-
-### Help
-
-When you need more information about all possible commands, you can run:
-
-```bash
-make help
-```
-
-This will output all available commands.
-
-
-### Custom bundles
-
-You want to add your own Makefile targets, then just create a Makefile in the folder `./bin` and 
-this file is included by default.
-
-Add to the Makefile in `./bin/Makefile`
-
-```Makefile
+```make
 custom.test:
 	echo "test"
 
 install: custom.test
 ```
 
-and now your command will output the string "test", when you run `make install`.
+Because Make uses prerequisites you never overwrite core targets: you simply chain your custom ones in front of `install`, `start`, etc.
 
+## Discovering Commands
 
-### Makefile Hooks
+`make help` aggregates the descriptions from every included bundle (core plus `docker/php`, `docker/node`, …). Use it whenever you add a new component to confirm the exported targets.
 
-You can use "hooks" to execute your own commands, when the project starts or stops, etc...
+## Related Bundles
 
-Makefile targets cannot be overwritten, but you can add your own targets as prerequisites.
-So you can add your own hooks without touching the original Makefile.
-
-```Makefile
-my.target:
-	echo "my target"
-	
-install: my.target
-```
-
-This will output the string "my target", when you run `make install` from the project root.
-
-### Available targets
-```Makefile
-start: ## start development environment
-stop: ## stop development environment
-install: ## init project and install all dependencies
-build:
-help:
-```
+Most common bundles are already checked into this repository (`docker/php`, `docker/node`, `docker/postgres`, `docker/localstack`, `docker/mailcatcher`, `docker/etc`). You can also import other public bundles (for example `make-docker`, `make-traefik`, or any bundle you create) as long as their `Makefile` follows the same conventions—drop them under `docker/<name>` and the core will wire them in automatically.
