@@ -31,7 +31,6 @@ APP_ENV=prod
 
 
 -include .env
--include ${XO_MODULES_DIR}/etc/config.env
 -include .env.local
 
 COMPOSE_FILES=$(shell find ${XO_MODULES_DIR} -type f -name "compose.yaml" | sort | sed 's/^/-f /')

@@ -55,7 +55,6 @@ core.install: ## Add all required entries to the .gitignore
 	$(call ensure_lines,.gitignore,${CORE_DIR}config/.gitignore)
 	$(call ensure_env_vars,.env,${CORE_DIR}config/.env)
 	@touch -- .env.local
-	$(call ensure_file,${CORE_DIR}config/config.env,${XO_CONFIG_DIR})
 
 # @see https://docs.docker.com/compose/environment-variables/envvars/
 export COMPOSE_PROJECT_NAME=${XO_PROJECT_NAME}
@@ -126,6 +125,34 @@ core.debug:
 git.clean:
 	git branch -r --merged main | grep -v main | sed 's/origin\///' | xargs git push origin -d
 	git branch --merged main | grep -v production | grep -v main | xargs git branch -D
+
+
+# The naming convention is changed here to prevent naming conflicts
+define add_module
+	@git submodule add -f $(1) ${XO_MODULES_DIR}/$(2)
+endef
+
+define remove_module
+	@git rm -f ${XO_MODULES_DIR}/$(1)
+endef
+
+add.node:
+	$(call add_module,"git@github.com:xebro-gmbh/make-node.git","node")
+
+remove.node:
+	$(call remove_module,"node")
+
+add.postgres:
+	git submodule add -f git@github.com:xebro-gmbh/make-postgres.git ${XO_MODULES_DIR}/postgres
+
+add.php:
+	git submodule add -f git@github.com:xebro-gmbh/make-apache-php.git ${XO_MODULES_DIR}/php
+
+add.mailcatcher:
+	git submodule add -f git@github.com:xebro-gmbh/make-mailcatcher.git ${XO_MODULES_DIR}/mailcatcher
+
+add.localstack:
+	git submodule add -f git@github.com:xebro-gmbh/make-localstack.git ${XO_MODULES_DIR}/localstack
 
 .dockerignore: core.docker-ignore
 clean: git.clean docker.clean
