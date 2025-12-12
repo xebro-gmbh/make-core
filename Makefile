@@ -69,7 +69,7 @@ docker.build:
 docker.logs: ## show logs for all container
 	@${DOCKER_COMPOSE} logs -f
 
-docker.up: docker.network ## Start all docker container for development
+docker.up: docker.network.create ## Start all docker container for development
 	@${DOCKER_COMPOSE} up -d
 
 docker.stop: ## Stop all docker container for development
@@ -91,7 +91,10 @@ docker.pull: ## Update all docker container
 docker.cmd.cmd:
 	@${DOCKER_COMPOSE} $$CMD
 
-docker.network: ## create docker network
+docker.network.inspect: ## show docker network settings
+	@docker network inspect ${XO_PROJECT_NAME}
+
+docker.network.create: ## create docker network
 	@docker network inspect ${XO_PROJECT_NAME} >/dev/null 2>&1 || docker network create ${XO_PROJECT_NAME}
 
 docker.config: ## Show docker compose config
@@ -175,7 +178,7 @@ remove.localstack:
 clean: git.clean docker.clean
 debug: core.debug
 help: core.help
-init: docker.network
+init: docker.network.create
 install: core.install core.docker-ignore
 post_install: core.generate
 logs: docker.logs
