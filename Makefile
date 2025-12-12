@@ -147,16 +147,29 @@ remove.node:
 	$(call remove_module,"node")
 
 add.postgres:
-	git submodule add -f git@github.com:xebro-gmbh/make-postgres.git ${XO_MODULES_DIR}/postgres
+	$(call add_module,"git@github.com:xebro-gmbh/make-postgres.git","postgres")
+
+remove.postgres:
+	$(call remove_module,"postgres")
 
 add.php:
-	git submodule add -f git@github.com:xebro-gmbh/make-apache-php.git ${XO_MODULES_DIR}/php
+	$(call add_module,"git@github.com:xebro-gmbh/make-apache-php.git","php")
+
+remove.php:
+	$(call remove_module,"php")
 
 add.mailcatcher:
-	git submodule add -f git@github.com:xebro-gmbh/make-mailcatcher.git ${XO_MODULES_DIR}/mailcatcher
+	$(call add_module,"git@github.com:xebro-gmbh/make-mailcatcher.git","mailcatcher")
+
+remove.mailcatcher:
+	$(call remove_module,"mailcatcher")
 
 add.localstack:
-	git submodule add -f git@github.com:xebro-gmbh/make-localstack.git ${XO_MODULES_DIR}/localstack
+	$(call add_module,"git@github.com:xebro-gmbh/make-localstack.git","localstack")
+
+remove.localstack:
+	$(call remove_module,"localstack")
+
 
 .dockerignore: core.docker-ignore
 clean: git.clean docker.clean
