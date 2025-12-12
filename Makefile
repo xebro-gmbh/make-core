@@ -27,6 +27,10 @@ endef
 define ensure_env_vars
 	@${CORE_DIR}ensure_helpers.sh ensure_env_vars "$(1)" "$(2)" "$(3)"
 endef
+# ensure each env var definition from $2 exists in $1 after envsubst substitution; pass "force" as $3 to replace mismatched values
+define remove_env_vars
+	@${CORE_DIR}ensure_helpers.sh remove_env_vars "$(1)" "$(2)"
+endef
 
 define add_help
 	@A="$2"; LINE="___________________________________________________________________" ; \
@@ -90,7 +94,7 @@ docker.cmd.cmd:
 docker.network: ## create docker network
 	@docker network inspect ${XO_PROJECT_NAME} >/dev/null 2>&1 || docker network create ${XO_PROJECT_NAME}
 
-docker.config.dev: ## Show docker compose config
+docker.config: ## Show docker compose config
 	@${DOCKER_COMPOSE} config
 
 core.help:
