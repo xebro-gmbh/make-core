@@ -71,6 +71,38 @@ ensure_env_vars() {
   done < "$src"
 }
 
+remove_env_vars() {
+  local dest="$1"
+  local src="$2"
+  if [ -z "$dest" ] || [ ! -f "$src" ]; then
+    echo "NO FILE"
+    return 0
+  fi
+
+  printf "${Gray}Removing env vars from ${Cyan}%s ${Gray} using ${Cyan}%s${Color_Off}\n" "$dest" "$src"
+
+  local key line pattern=""
+  while IFS= read -r line || [ -n "$line" ]; do
+    key="${line%%=*}"
+    if [ -z "$key" ]; then
+      continue
+    fi
+    if [ -n "$pattern" ]; then
+      pattern="${pattern}|"
+    fi
+    pattern="${pattern}${key}"
+  done < "$src"
+
+  local tmp
+  tmp=$(mktemp)
+  if [ -n "$pattern" ]; then
+    grep -v -E "^(${pattern})=" "$dest" > "$tmp"
+  else
+    cp "$dest" "$tmp"
+  fi
+  mv "$tmp" "$dest"
+}
+
 case "${1:-}" in
   ensure_lines)
     ensure_lines "$2" "$3"
@@ -78,8 +110,11 @@ case "${1:-}" in
   ensure_env_vars)
     ensure_env_vars "$2" "$3" "${4:-}"
     ;;
+  remove_env_vars)
+    remove_env_vars "$2" "$3"
+    ;;
   *)
-    printf 'Usage: %s <ensure_lines|ensure_env_vars> <dest> <source> [force]\n' "$0"
+    printf 'Usage: %s <ensure_lines|ensure_env_vars|remove_env_vars> <dest> <source> [force]\n' "$0"
     exit 1
     ;;
 esac
