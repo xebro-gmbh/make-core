@@ -113,7 +113,7 @@ core.generate: ## Generate compose.yaml files from base + module files
 
 core.docker-ignore:
 	@touch .dockerignore
-	$(call ensure_lines,"./config/.dockerignore","${CORE_DIR}.dockerignore")
+	$(call ensure_lines,".dockerignore","${CORE_DIR}/config/.dockerignore")
 
 core.debug:
 	@$(call headline,"DEBUGGING Core")
