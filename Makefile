@@ -173,6 +173,9 @@ add.localstack:
 remove.localstack:
 	$(call remove_module,"localstack")
 
+update.modules:
+	@git submodule update --remote
+
 
 .dockerignore: core.docker-ignore
 clean: git.clean docker.clean

@@ -11,11 +11,17 @@ This is the main repository for the dev-setup make bundles. Every other folder i
 
 ## Installation
 
-1. Keep the core as a git submodule or copy it into `docker/core`:
+1. Add the core as a git submodule or copy it into `docker/core`:
    ```bash
    mkdir -p docker
    git clone https://github.com/xebro-gmbh/make-core.git docker/core
    ```
+   or as a git submodule
+
+   ```bash
+   git submodule add https://github.com/xebro-gmbh/make-core.git docker/core
+   ```
+   
 2. Make the root `Makefile` point to the `main_file` (symlink preferred, copy as fallback for Windows/WSL2):
    ```bash
    ln -sf docker/core/main_file Makefile
@@ -28,8 +34,6 @@ This is the main repository for the dev-setup make bundles. Every other folder i
    make init      # install app dependencies, run migrations, seed data
    make start     # start docker-compose services from all enabled bundles
    ```
-
-These steps are idempotent; you can re-run them after pulling new code.
 
 ## QuickStart: Web Developer Environment
 
@@ -49,15 +53,27 @@ Create the directory structure and install the required bundle modules:
 # Create project directory (if new)
 mkdir my-webapp && cd my-webapp
 
+# initialize git (if not already)
+git init
+
 # Install Core Bundle
 mkdir -p docker
-git clone https://github.com/xebro-gmbh/make-core.git docker/core
-git clone git@github.com:xebro-gmbh/make-mailcatcher.git docker/mailcatcher
-git clone git@github.com:xebro-gmbh/make-node.git docker/node
-git clone git@github.com:xebro-gmbh/make-apache-php.git docker/php
+git submodule add https://github.com/xebro-gmbh/make-core.git docker/core
 
 # Link Makefile
 ln -sf docker/core/main_file Makefile
+
+# then use the existing make commands to add more submodules
+make add.php
+make add.node
+make add.postgres
+
+# when you already have an existnig repository and need to kickstart your submodules, because someone added those to the project
+git submodule update --init
+
+# or to update all submodules to the current version
+git submodule update --remote
+
 ```
 
 ### Step 2: Initialize Environment
