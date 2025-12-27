@@ -1,5 +1,5 @@
 #--------------------------
-# xebro GmbH - Make Core - 1.0.3
+# xebro GmbH - Make Core - 1.0.4
 #--------------------------
 .PHONY: .dockerignore docker.build docker.init
 
