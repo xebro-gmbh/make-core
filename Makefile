@@ -18,6 +18,7 @@ define ensure_file
 	@set -e; \
 	FILENAME=$(notdir $(1)); \
 	printf "%b\n" "${Gray}Copy file ${Cyan}${2}/$$FILENAME ${Color_Off}"; \
+	mkdir -p $(2) ; \
 	[[ -f "$(2)/$$FILENAME" ]] || { \
 		cp "$(1)" "$(2)/$$FILENAME"; \
 	}
@@ -62,6 +63,7 @@ core.install: ## Add all required entries to the .gitignore
 
 # @see https://docs.docker.com/compose/environment-variables/envvars/
 export COMPOSE_PROJECT_NAME=${XO_PROJECT_NAME}
+export COMPOSE_REMOVE_ORPHANS=1
 
 docker.build:
 	@${DOCKER_COMPOSE} build --build-arg USER_ID=$$(id -u) --build-arg GROUP_ID=$$(id -g) --build-arg UNAME=$$(whoami) --no-cache
@@ -176,6 +178,17 @@ remove.localstack:
 update.modules:
 	@git submodule update --remote
 
+add.playwright:
+	git submodule add git@github.com:xebro-gmbh/make-playwright.git ${XO_MODULES_DIR}/playwright
+
+remove.playwright:
+	$(call remove_module,"playwright")
+
+add.worker:
+	git submodule add git@github.com:xebro-gmbh/make-worker.git ${XO_MODULES_DIR}/worker
+
+remove.worker:
+	$(call remove_module,"worker")
 
 .dockerignore: core.docker-ignore
 clean: git.clean docker.clean
