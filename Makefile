@@ -1,5 +1,5 @@
 #--------------------------
-# xebro GmbH - Make Core - 1.0.4
+# xebro GmbH - Make Core - 1.0.5
 #--------------------------
 .PHONY: .dockerignore docker.build docker.init
 
@@ -43,6 +43,7 @@ define add_help
 	}' $1 | sort
 	@echo ""
 endef
+
 
 define headline
 	@echo ""
@@ -136,59 +137,6 @@ git.clean:
 	git branch --merged main | grep -v production | grep -v main | xargs git branch -D
 
 
-# The naming convention is changed here to prevent naming conflicts
-define add_module
-	@git submodule add -f $(1) ${XO_MODULES_DIR}/$(2)
-endef
-
-define remove_module
-	@git rm -f ${XO_MODULES_DIR}/$(1)
-endef
-
-add.node:
-	$(call add_module,"git@github.com:xebro-gmbh/make-node.git","node")
-
-remove.node:
-	$(call remove_module,"node")
-
-add.postgres:
-	$(call add_module,"git@github.com:xebro-gmbh/make-postgres.git","postgres")
-
-remove.postgres:
-	$(call remove_module,"postgres")
-
-add.php:
-	$(call add_module,"git@github.com:xebro-gmbh/make-apache-php.git","php")
-
-remove.php:
-	$(call remove_module,"php")
-
-add.mailcatcher:
-	$(call add_module,"git@github.com:xebro-gmbh/make-mailcatcher.git","mailcatcher")
-
-remove.mailcatcher:
-	$(call remove_module,"mailcatcher")
-
-add.localstack:
-	$(call add_module,"git@github.com:xebro-gmbh/make-localstack.git","localstack")
-
-remove.localstack:
-	$(call remove_module,"localstack")
-
-update.modules:
-	@git submodule update --remote
-
-add.playwright:
-	git submodule add git@github.com:xebro-gmbh/make-playwright.git ${XO_MODULES_DIR}/playwright
-
-remove.playwright:
-	$(call remove_module,"playwright")
-
-add.worker:
-	git submodule add git@github.com:xebro-gmbh/make-worker.git ${XO_MODULES_DIR}/worker
-
-remove.worker:
-	$(call remove_module,"worker")
 
 .dockerignore: core.docker-ignore
 clean: git.clean docker.clean

@@ -9,6 +9,8 @@ XO_CORE_VERSION=1.0.4
 XO_ROOT_DIR=$(shell pwd)
 XO_MODULES_DIR=docker
 XO_CONFIG_DIR=${XO_ROOT_DIR}/${XO_MODULES_DIR}/config
+XO_MODULES_BRANCH?=main
+XO_MODULES_REPO_BASE?=https://github.com/xebro-gmbh
 
 CFLAGS=-g
 export CFLAGS
@@ -38,6 +40,11 @@ DOCKER_COMPOSE=docker compose ${COMPOSE_FILES}
 
 export
 
+define clone_module
+	@rm -rf ${XO_MODULES_DIR}/$(2)
+	@git clone --branch ${XO_MODULES_BRANCH} --depth 1 $(1) ${XO_MODULES_DIR}/$(2)
+endef
+
 #### end of configuring the app, start using the variables
 
 
@@ -57,6 +64,32 @@ post_install:
 test: ## Run tests to verify app is running as expected
 
 build:
+
+install.core:
+	$(call clone_module,"${XO_MODULES_REPO_BASE}/make-core.git","core")
+
+install.php:
+	$(call clone_module,"${XO_MODULES_REPO_BASE}/make-apache-php.git","php")
+
+install.node:
+	$(call clone_module,"${XO_MODULES_REPO_BASE}/make-node.git","node")
+
+install.postgres:
+	$(call clone_module,"${XO_MODULES_REPO_BASE}/make-postgres.git","postgres")
+
+install.mailcatcher:
+	$(call clone_module,"${XO_MODULES_REPO_BASE}/make-mailcatcher.git","mailcatcher")
+
+install.localstack:
+	$(call clone_module,"${XO_MODULES_REPO_BASE}/make-localstack.git","localstack")
+
+install.playwright:
+	$(call clone_module,"${XO_MODULES_REPO_BASE}/make-playwright.git","playwright")
+
+install.worker:
+	$(call clone_module,"${XO_MODULES_REPO_BASE}/make-worker.git","worker")
+
+install.modules: install.core install.php install.node install.postgres install.mailcatcher install.localstack install.playwright install.worker
 
 help:
 	$(call add_help,./Makefile,"xebro")
