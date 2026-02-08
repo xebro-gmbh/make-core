@@ -55,12 +55,46 @@ define target_name
 	@echo -e "\n\n${Gray}____________________________ ${1} ${Color_Off}\n"
 endef
 
+define archive_module
+	@rm -rf ${XO_MODULES_DIR}/$(2)
+	@mkdir -p ${XO_MODULES_DIR}/$(2)
+	@curl -L "${XO_MODULES_REPO_BASE}/$(1)/archive/refs/heads/${XO_MODULES_BRANCH}.tar.gz" | tar -xz -C ${XO_MODULES_DIR}/$(2) --strip-components=1
+endef
+
 core.install: ## Add all required entries to the .gitignore
 	@mkdir -p ${XO_CONFIG_DIR}
 	$(call headline,"Installing Core")
 	$(call ensure_lines,.gitignore,${CORE_DIR}config/.gitignore)
 	$(call ensure_env_vars,.env,${CORE_DIR}config/.env)
 	@touch -- .env.local
+
+install.core:
+	$(call archive_module,"make-core","core")
+
+install.php:
+	$(call archive_module,"make-apache-php","php")
+
+install.node:
+	$(call archive_module,"make-node","node")
+
+install.postgres:
+	$(call archive_module,"make-postgres","postgres")
+
+install.mailcatcher:
+	$(call archive_module,"make-mailcatcher","mailcatcher")
+
+install.localstack:
+	$(call archive_module,"make-localstack","localstack")
+
+install.playwright:
+	$(call archive_module,"make-playwright","playwright")
+
+install.worker:
+	$(call archive_module,"make-worker","worker")
+
+install.modules: install.core install.php install.node install.postgres install.mailcatcher install.localstack install.playwright install.worker
+
+update.php: install.php
 
 # @see https://docs.docker.com/compose/environment-variables/envvars/
 export COMPOSE_PROJECT_NAME=${XO_PROJECT_NAME}
