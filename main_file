@@ -1,11 +1,11 @@
 #--------------------------
-# xebro GmbH - Makefile - 1.0.4
+# xebro GmbH - Makefile - 1.1.0
 #--------------------------
 .ONESHELL:
 .SHELLFLAGS := -eu -c
-.PHONY: help $(MAKEFILE_LIST) start stop build install
+.PHONY: help pre_start start post_start stop build install test debug
 
-XO_CORE_VERSION=1.0.4
+XO_CORE_VERSION=1.1.0
 XO_ROOT_DIR=$(shell pwd)
 XO_MODULES_DIR=docker
 XO_CONFIG_DIR=${XO_ROOT_DIR}/${XO_MODULES_DIR}/config
@@ -13,14 +13,19 @@ XO_MODULES_BRANCH?=main
 XO_MODULES_REPO_BASE?=https://github.com/xebro-gmbh
 
 CFLAGS=-g
-export CFLAGS
+export XO_CORE_VERSION XO_ROOT_DIR XO_MODULES_DIR XO_CONFIG_DIR
+export XO_MODULES_BRANCH XO_MODULES_REPO_BASE
+export USER_UID USER_GID APP_ENV DOCKER_COMPOSE COMPOSE_FILES CFLAGS
 
+
+UNAME := $(shell uname)
 
 ifeq ($(UNAME),Darwin)
-     SHELL := /opt/local/bin/bash
+     SHELL := /bin/bash
      OS_X  := true
 else ifneq (,$(wildcard /etc/redhat-release))
      OS_RHEL := true
+     SHELL := /bin/bash
 else
      OS_DEB  := true
      SHELL := /bin/bash
@@ -48,7 +53,13 @@ export
 
 #### starting hooks for other makefiles
 
-start: post_start ## start development environment
+pre_start:
+
+
+start: pre_start ## start development environment
+	@$(call headline,"xor started")
+	@$(MAKE) --no-print-directory post_start
+
 post_start:
 
 stop: ## stop development environment

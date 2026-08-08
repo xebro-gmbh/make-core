@@ -74,7 +74,7 @@ ensure_env_vars() {
 remove_env_vars() {
   local dest="$1"
   local src="$2"
-  if [ -z "$dest" ] || [ ! -f "$src" ]; then
+  if [ -z "$dest" ] || [ ! -f "$dest" ] || [ ! -f "$src" ]; then
     echo "NO FILE"
     return 0
   fi
@@ -103,6 +103,59 @@ remove_env_vars() {
   mv "$tmp" "$dest"
 }
 
+# ensure each configured sub-repo exists and its origin points to the given remote
+# $1: path to a config file with one "<folder>=<git-remote>" entry per line
+#     (blank lines and lines starting with '#' are ignored)
+# $2: optional branch to clone (defaults to the remote's default branch)
+#
+# A missing folder is cloned, an existing one only gets its origin corrected —
+# the working tree and the checked-out branch are never touched, so this is safe
+# to re-run. Projects without a config file are skipped, not failed.
+ensure_repos() {
+  local file="$1"
+  local branch="${2:-}"
+  local line name remote current
+  if [ -z "$file" ] || [ ! -f "$file" ]; then
+    printf "${Gray}No sub-repo config at ${Cyan}%s${Gray} — skipping. See ${Cyan}docker/core/config/subrepos.conf.example${Color_Off}\n" "$file"
+    return 0
+  fi
+  printf "${Gray}Reading sub-repos from ${Cyan}%s${Color_Off}\n" "$file"
+  while IFS= read -r line || [ -n "$line" ]; do
+    # strip surrounding whitespace
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    # skip blanks and comments
+    if [ -z "$line" ] || [ "${line#\#}" != "$line" ]; then
+      continue
+    fi
+    name="${line%%=*}"
+    remote="${line#*=}"
+    if [ -z "$name" ] || [ -z "$remote" ] || [ "$name" = "$line" ]; then
+      printf "${Red}Skipping invalid sub-repo entry '%s' (expected <folder>=<remote>)${Color_Off}\n" "$line"
+      continue
+    fi
+    if [ ! -e "$name/.git" ]; then
+      printf "${Gray}Cloning ${Cyan}%s${Gray} into ${Cyan}%s${Color_Off}\n" "$remote" "$name"
+      if [ -n "$branch" ]; then
+        git clone --branch "$branch" "$remote" "$name"
+      else
+        git clone "$remote" "$name"
+      fi
+      continue
+    fi
+    current=$(git -C "$name" remote get-url origin 2>/dev/null || true)
+    if [ "$current" = "$remote" ]; then
+      printf "${Gray}Sub-repo ${Cyan}%s${Gray} already references ${Green}%s${Color_Off}\n" "$name" "$remote"
+    elif [ -n "$current" ]; then
+      printf "${Gray}Updating origin of ${Cyan}%s${Gray}: ${Yellow}%s${Gray} -> ${Green}%s${Color_Off}\n" "$name" "$current" "$remote"
+      git -C "$name" remote set-url origin "$remote"
+    else
+      printf "${Gray}Adding origin ${Green}%s${Gray} to ${Cyan}%s${Color_Off}\n" "$remote" "$name"
+      git -C "$name" remote add origin "$remote"
+    fi
+  done < "$file"
+}
+
 case "${1:-}" in
   ensure_lines)
     ensure_lines "$2" "$3"
@@ -113,8 +166,11 @@ case "${1:-}" in
   remove_env_vars)
     remove_env_vars "$2" "$3"
     ;;
+  ensure_repos)
+    ensure_repos "$2" "${3:-}"
+    ;;
   *)
-    printf 'Usage: %s <ensure_lines|ensure_env_vars|remove_env_vars> <dest> <source> [force]\n' "$0"
+    printf 'Usage: %s <ensure_lines|ensure_env_vars|remove_env_vars|ensure_repos> <dest> <source> [force]\n' "$0"
     exit 1
     ;;
 esac

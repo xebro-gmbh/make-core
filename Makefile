@@ -1,10 +1,21 @@
 #--------------------------
-# xebro GmbH - Make Core - 1.0.5
+# xebro GmbH - Make Core - 1.1.0
 #--------------------------
 .PHONY: .dockerignore docker.build docker.init
 
 CORE_DIR := $(patsubst $(XO_ROOT_DIR)/%,./%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 CORE := $(notdir $(patsubst %/,%,$(CORE_DIR)))
+
+# Sub-repositories ensured by `make core.repos`.
+# Folder names and git remotes are configured in the text file referenced by
+# XO_SUBREPOS_FILE — one "<folder>=<git-remote>" entry per line. Override the
+# path here or in .env / .env.local; set XO_SUBREPOS_BRANCH to clone a branch
+# other than the remote default. Projects without the file are skipped.
+XO_SUBREPOS_FILE ?= ${XO_ROOT_DIR}/subrepos.conf
+XO_SUBREPOS_BRANCH ?=
+
+# Branches `git.clean` must never delete, as an extended regex.
+XO_KEEP_BRANCHES ?= main|production|prod
 
 ## from https://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
 -include $(CORE_DIR)colors.mk
@@ -24,13 +35,18 @@ define ensure_file
 	}
 endef
 
-# ensure each env var definition from $2 exists in $1 after envsubst substitution; pass "force" as $3 to replace mismatched values
+# ensure each env var definition from $2 exists in $1 after envsubst substitution; always replaces mismatched values so `make install` restores the expected state
 define ensure_env_vars
-	@${CORE_DIR}ensure_helpers.sh ensure_env_vars "$(1)" "$(2)" "$(3)"
+	@${CORE_DIR}ensure_helpers.sh ensure_env_vars "$(1)" "$(2)" "force"
 endef
-# ensure each env var definition from $2 exists in $1 after envsubst substitution; pass "force" as $3 to replace mismatched values
+# remove each env var listed in $2 from $1
 define remove_env_vars
 	@${CORE_DIR}ensure_helpers.sh remove_env_vars "$(1)" "$(2)"
+endef
+
+# ensure each sub-repo listed in the config file $1 exists and points to the configured remote; $2 is an optional branch
+define ensure_repos
+	@${CORE_DIR}ensure_helpers.sh ensure_repos "$(1)" "$(2)"
 endef
 
 define add_help
@@ -68,6 +84,10 @@ core.install: ## Add all required entries to the .gitignore
 	$(call ensure_env_vars,.env,${CORE_DIR}config/.env)
 	@touch -- .env.local
 
+core.repos: ## Ensure sub-repos exist and reference the configured git remote
+	$(call headline,"Ensuring sub-repositories")
+	$(call ensure_repos,${XO_SUBREPOS_FILE},${XO_SUBREPOS_BRANCH})
+
 install.core:
 	$(call archive_module,"make-core","core")
 
@@ -80,8 +100,8 @@ install.node:
 install.postgres:
 	$(call archive_module,"make-postgres","postgres")
 
-install.mailcatcher:
-	$(call archive_module,"make-mailcatcher","mailcatcher")
+install.mailpit:
+	$(call archive_module,"make-mailpit","mailpit")
 
 install.localstack:
 	$(call archive_module,"make-localstack","localstack")
@@ -92,7 +112,7 @@ install.playwright:
 install.worker:
 	$(call archive_module,"make-worker","worker")
 
-install.modules: install.core install.php install.node install.postgres install.mailcatcher install.localstack install.playwright install.worker
+install.modules: install.core install.php install.node install.postgres install.mailpit install.localstack install.playwright install.worker
 
 update.php: install.php
 
@@ -107,20 +127,21 @@ docker.logs: ## show logs for all container
 	@${DOCKER_COMPOSE} logs -f
 
 docker.up: docker.network.create ## Start all docker container for development
+	@bash ${XO_MODULES_DIR}/core/generate_certs.sh
 	@${DOCKER_COMPOSE} up -d
 
 docker.stop: ## Stop all docker container for development
-	@${DOCKER_COMPOSE} stop --remove-orphans
+	@${DOCKER_COMPOSE} stop
 
 docker.down: ## Stop all docker container for development
 	@${DOCKER_COMPOSE} down --remove-orphans
 
 docker.clean: ## Remove all docker Container and clean up System
 	@${DOCKER_COMPOSE} down --remove-orphans
-	@docker images | awk '$$2 == "<none>" {print $$3}' | xargs docker image rm -f
+	@docker images | awk '$$2 == "<none>" {print $$3}' | xargs -r docker image rm -f
 
 docker.kill: ## kill ALL docker container running on your Host
-	@docker stop $$(docker ps -aq) | xargs docker rm
+	@docker ps -aq | xargs -r docker stop | xargs -r docker rm
 
 docker.pull: ## Update all docker container
 	@${DOCKER_COMPOSE} pull
@@ -141,7 +162,7 @@ core.help:
 	$(call add_help,${CORE_DIR}Makefile,"core")
 
 docker.restart:
-	@docker stop $$(docker ps -aq) | xargs docker rm
+	@docker ps -aq | xargs -r docker rm -f
 	@${DOCKER_COMPOSE} up -d
 
 core.generate: ## Generate compose.yaml files from base + module files
@@ -168,7 +189,7 @@ core.debug:
 
 git.clean:
 	git branch -r --merged main | grep -v main | sed 's/origin\///' | xargs git push origin -d
-	git branch --merged main | grep -v production | grep -v main | xargs git branch -D
+	git branch --merged main | grep -vE '${XO_KEEP_BRANCHES}' | xargs git branch -D
 
 
 
@@ -177,7 +198,7 @@ clean: git.clean docker.clean
 debug: core.debug
 help: core.help
 init: docker.network.create
-install: core.install core.docker-ignore
+install: core.repos core.install core.docker-ignore
 post_install: core.generate
 logs: docker.logs
 restart: docker.restart

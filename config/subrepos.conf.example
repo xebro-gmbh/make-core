@@ -1,0 +1,21 @@
+# Sub-repositories ensured by `make core.repos` (runs as part of `make install`).
+# Copy this file to the project root as `subrepos.conf` and fill in your remotes.
+#
+# One entry per line, format: <folder>=<git-remote>
+# Blank lines and lines starting with '#' are ignored.
+#
+# A missing folder is cloned, an existing one only gets its `origin` corrected —
+# the working tree and the checked-out branch are never touched, so the target is
+# safe to re-run. Set XO_SUBREPOS_BRANCH in .env.local to clone a branch other
+# than the remote default.
+#
+# When a repository moves, change the remote here and re-run `make core.repos`;
+# existing clones are repointed in place.
+#
+# This replaces git submodules: no .gitmodules, and the folders stay plain clones.
+
+# api=git@github.com:your-org/your-api.git
+# frontend=git@github.com:your-org/your-frontend.git
+#
+# An entry for "./" keeps the origin of the project repository itself in sync:
+# ./=git@github.com:your-org/your-project.git

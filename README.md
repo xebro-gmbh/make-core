@@ -11,17 +11,17 @@ This is the main repository for the dev-setup make bundles. Every other folder i
 
 ## Installation
 
-1. Add the core as a git submodule or copy it into `docker/core`:
+1. Fetch the core into `docker/core`:
    ```bash
    mkdir -p docker
-   git clone https://github.com/xebro-gmbh/make-core.git docker/core
+   curl -L https://github.com/xebro-gmbh/make-core/archive/refs/heads/main.tar.gz \
+     | tar -xz -C docker/core --strip-components=1
    ```
-   or as a git submodule
+   The bundles are **not** git submodules. They are extracted as plain files and
+   committed to your project, so a fresh clone needs no extra initialisation. Once
+   the core is in place, `make install.core` and `make install.modules` do the same
+   thing for every subsequent update.
 
-   ```bash
-   git submodule add https://github.com/xebro-gmbh/make-core.git docker/core
-   ```
-   
 2. Make the root `Makefile` point to the `main_file` (symlink preferred, copy as fallback for Windows/WSL2):
    ```bash
    ln -sf docker/core/main_file Makefile
@@ -37,7 +37,7 @@ This is the main repository for the dev-setup make bundles. Every other folder i
 
 ## QuickStart: Web Developer Environment
 
-This QuickStart tutorial shows you how to set up a complete web development environment with **PHP (Symfony)**, **Node.js (React/Vue)**, **PostgreSQL**, and **Mailcatcher**.
+This QuickStart tutorial shows you how to set up a complete web development environment with **PHP (Symfony)**, **Node.js (React/Vue)**, **PostgreSQL**, and **Mailpit**.
 
 ### Prerequisites
 
@@ -57,24 +57,25 @@ mkdir my-webapp && cd my-webapp
 git init
 
 # Install Core Bundle
-mkdir -p docker
-git submodule add https://github.com/xebro-gmbh/make-core.git docker/core
+mkdir -p docker/core
+curl -L https://github.com/xebro-gmbh/make-core/archive/refs/heads/main.tar.gz \
+  | tar -xz -C docker/core --strip-components=1
 
 # Link Makefile
 ln -sf docker/core/main_file Makefile
 
-# then use the existing make commands to add more submodules
-make add.php
-make add.node
-make add.postgres
+# then use the existing make commands to add more bundles
+make install.php
+make install.node
+make install.postgres
+make install.mailpit
 
-# when you already have an existnig repository and need to kickstart your submodules, because someone added those to the project
-git submodule update --init
-
-# or to update all submodules to the current version
-git submodule update --remote
-
+# or fetch every bundle at once — this also refreshes the core itself
+make install.modules
 ```
+
+Every bundle is extracted as plain files and committed to your project. There are no
+git submodules involved, so `git clone` alone gives a complete checkout.
 
 ### Step 2: Initialize Environment
 
@@ -107,7 +108,7 @@ After a successful start, you have the following services:
 | **PHP**         | `http://localhost:80`   | PHP running with an apache2 webserver                  |
 | **Node.js**     | `http://localhost:3000` | React/Vue development server with hot-reload           |
 | **PostgreSQL**  | `localhost:5432`        | Database (User: `app`, Password: `app`, DB: `symfony`) |
-| **Mailcatcher** | `http://localhost:1080` | Email web interface for testing emails                 |
+| **Mailpit**     | `http://localhost:8025` | Email web interface for testing emails                 |
 
 ### Step 4: Development Workflow
 
@@ -159,12 +160,12 @@ make postgres.export
 make postgres.logs
 ```
 
-**Email Testing (Mailcatcher):**
+**Email Testing (Mailpit):**
 ```bash
 # Open web interface
-open http://localhost:1080
+open http://localhost:8025
 
-# SMTP server for your application: mailcatcher:1025 (inside Docker)
+# SMTP server for your application: mailpit:1025 (inside Docker)
 # or localhost:1025 (from host)
 ```
 
@@ -198,6 +199,41 @@ make help
 **Node modules not found:**
 - Run `make node.init` to install npm packages
 
+## Sub-repositories
+
+Projects that are split across several git repositories — an API here, a frontend there —
+can have the core keep those clones in place. This replaces git submodules: there is no
+`.gitmodules`, and the folders stay ordinary clones.
+
+Create `subrepos.conf` in the project root, one entry per line:
+
+```bash
+api=git@github.com:your-org/your-api.git
+frontend=git@github.com:your-org/your-frontend.git
+# an entry for "./" keeps the origin of the project repository itself in sync
+./=git@github.com:your-org/your-project.git
+```
+
+`make core.repos` — part of `make install` — then reconciles them:
+
+- the folder name in the config is the target directory
+- a **missing** folder is cloned
+- an **existing** folder only gets its `origin` corrected; the working tree and the
+  checked-out branch are never touched
+
+So the target is safe to re-run, and a fresh start is just `git clone` followed by
+`make install`. When a repository moves, change the remote in `subrepos.conf` and re-run
+`make core.repos` — existing clones are repointed in place, which is the part that would
+be awkward with submodules.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `XO_SUBREPOS_FILE` | `${XO_ROOT_DIR}/subrepos.conf` | Path to the config file |
+| `XO_SUBREPOS_BRANCH` | *(empty)* | Clone this branch instead of the remote default |
+
+Projects without a `subrepos.conf` are skipped with a hint, not failed. See
+`docker/core/config/subrepos.conf.example` for a commented template.
+
 ## Customisation Hooks
 
 Adding project-specific commands is done through plain Makefiles:
@@ -220,7 +256,7 @@ Because Make uses prerequisites you never overwrite core targets: you simply cha
 
 ## Related Bundles
 
-Most common bundles are already checked into this repository (`docker/php`, `docker/node`, `docker/postgres`, `docker/localstack`, `docker/mailcatcher`, `docker/etc`). You can also import other public bundles (for example `make-docker`, `make-traefik`, or any bundle you create) as long as their `Makefile` follows the same conventions—drop them under `docker/<name>` and the core will wire them in automatically.
+Most common bundles are already checked into this repository (`docker/php`, `docker/node`, `docker/postgres`, `docker/localstack`, `docker/mailpit`, `docker/etc`). You can also import other public bundles (for example `make-docker`, `make-traefik`, or any bundle you create) as long as their `Makefile` follows the same conventions—drop them under `docker/<name>` and the core will wire them in automatically.
 
 ## Compose File Generation
 
