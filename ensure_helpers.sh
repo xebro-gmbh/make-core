@@ -71,6 +71,25 @@ ensure_env_vars() {
   done < "$src"
 }
 
+# seed each env var definition from $2 into $1, but only where the key is not
+# present yet — an existing value is never touched.
+#
+# This is the counterpart to `ensure_env_vars`, which always restores the value
+# from the template. Templates mix two kinds of entry: infrastructure constants
+# the bundle owns (XO_MODULES_DIR, APP_RUNTIME_ENV) and values that belong to the
+# project (XO_PROJECT_NAME, POSTGRES_DB, secrets). Forcing the second kind resets
+# a working setup to the bundle defaults on every `make install`, so those belong
+# in a `config/.env.seed` and go through here instead.
+seed_env_vars() {
+  local dest="$1"
+  local src="$2"
+  if [ -z "$dest" ] || [ ! -f "$src" ]; then
+    return 0
+  fi
+  printf "${Gray}Seeding ${Cyan}%s ${Gray} from ${Cyan}%s${Gray} (existing values kept)${Color_Off}\n" "$dest" "$src"
+  ensure_env_vars "$dest" "$src" ""
+}
+
 remove_env_vars() {
   local dest="$1"
   local src="$2"
@@ -163,6 +182,9 @@ case "${1:-}" in
   ensure_env_vars)
     ensure_env_vars "$2" "$3" "${4:-}"
     ;;
+  seed_env_vars)
+    seed_env_vars "$2" "$3"
+    ;;
   remove_env_vars)
     remove_env_vars "$2" "$3"
     ;;
@@ -170,7 +192,7 @@ case "${1:-}" in
     ensure_repos "$2" "${3:-}"
     ;;
   *)
-    printf 'Usage: %s <ensure_lines|ensure_env_vars|remove_env_vars|ensure_repos> <dest> <source> [force]\n' "$0"
+    printf 'Usage: %s <ensure_lines|ensure_env_vars|seed_env_vars|remove_env_vars|ensure_repos> <dest> <source> [force]\n' "$0"
     exit 1
     ;;
 esac

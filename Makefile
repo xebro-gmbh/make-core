@@ -1,5 +1,5 @@
 #--------------------------
-# xebro GmbH - Make Core - 1.1.0
+# xebro GmbH - Make Core - 1.1.1
 #--------------------------
 .PHONY: .dockerignore docker.build docker.init
 
@@ -39,6 +39,11 @@ endef
 define ensure_env_vars
 	@${CORE_DIR}ensure_helpers.sh ensure_env_vars "$(1)" "$(2)" "force"
 endef
+# seed each env var definition from $2 into $1 only where the key is missing; existing values are kept — for project identity and secrets that must survive `make install`
+define seed_env_vars
+	@${CORE_DIR}ensure_helpers.sh seed_env_vars "$(1)" "$(2)"
+endef
+
 # remove each env var listed in $2 from $1
 define remove_env_vars
 	@${CORE_DIR}ensure_helpers.sh remove_env_vars "$(1)" "$(2)"
@@ -81,6 +86,7 @@ core.install: ## Add all required entries to the .gitignore
 	@mkdir -p ${XO_CONFIG_DIR}
 	$(call headline,"Installing Core")
 	$(call ensure_lines,.gitignore,${CORE_DIR}config/.gitignore)
+	$(call seed_env_vars,.env,${CORE_DIR}config/.env.seed)
 	$(call ensure_env_vars,.env,${CORE_DIR}config/.env)
 	@touch -- .env.local
 

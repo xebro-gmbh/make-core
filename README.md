@@ -199,6 +199,28 @@ make help
 **Node modules not found:**
 - Run `make node.init` to install npm packages
 
+## Environment variables: forced vs seeded
+
+Each bundle ships up to two templates, and `make install` treats them differently:
+
+| Template | Helper | Behaviour |
+|---|---|---|
+| `config/.env` | `ensure_env_vars` | **Forced** — the value is restored from the template on every run |
+| `config/.env.seed` | `seed_env_vars` | **Seeded once** — written only when the key is missing; an existing value is never touched |
+
+The split matters. Templates otherwise mix two kinds of entry: infrastructure
+constants the bundle owns (`XO_MODULES_DIR`, `APP_RUNTIME_ENV`) and values that
+belong to the project (`XO_PROJECT_NAME`, database names, secrets). Forcing the
+second kind resets a working setup to the bundle defaults on every `make install`
+— renaming the compose project, pointing the app at a different database, and
+overwriting local secrets with placeholders.
+
+So: anything a project is expected to change goes in `config/.env.seed`.
+Everything else stays in `config/.env` and is enforced.
+
+Project-specific deviations from a **forced** value belong in `.env.local`, which
+is never rewritten.
+
 ## Sub-repositories
 
 Projects that are split across several git repositories — an API here, a frontend there —

@@ -1,11 +1,11 @@
 #--------------------------
-# xebro GmbH - Makefile - 1.1.0
+# xebro GmbH - Makefile - 1.1.1
 #--------------------------
 .ONESHELL:
 .SHELLFLAGS := -eu -c
 .PHONY: help pre_start start post_start stop build install test debug
 
-XO_CORE_VERSION=1.1.0
+XO_CORE_VERSION=1.1.1
 XO_ROOT_DIR=$(shell pwd)
 XO_MODULES_DIR=docker
 XO_CONFIG_DIR=${XO_ROOT_DIR}/${XO_MODULES_DIR}/config
