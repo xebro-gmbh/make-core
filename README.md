@@ -186,6 +186,30 @@ Show all available Make targets:
 make help
 ```
 
+### Parallel Instances
+
+The stack can run multiple times on one machine — one instance per
+checkout/worktree, e.g. when several coding agents work in parallel:
+
+```bash
+make instance.init   # writes .env.local: unique XO_PROJECT_NAME + free host ports
+make start           # boots this instance on its own ports
+```
+
+- `instance.init` derives the project name from the checkout directory
+  (`INSTANCE=<name>` overrides it) and picks free ports for all published
+  services; `FORCE=1` regenerates an existing `.env.local`.
+- Without `instance.init` (empty `.env.local`) the default single-instance
+  behavior and ports are unchanged.
+- Always go through the make targets: raw `docker compose` calls do **not**
+  interpolate `.env.local` and would fall back to the default name and ports.
+- Expect other instances on the machine: never assume visible containers,
+  volumes, or default ports belong to your checkout, and only touch resources
+  of your own `XO_PROJECT_NAME`. `make restart` / `make docker.kill` are
+  scoped to the current project.
+- Bundles that build a shared image tag (e.g. php via `XO_PHP_IMAGE`) reuse
+  it across instances — see the bundle READMEs for isolation overrides.
+
 ### Common Issues
 
 **Services won't start:**
