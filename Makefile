@@ -97,8 +97,12 @@ core.repos: ## Ensure sub-repos exist and reference the configured git remote
 install.core:
 	$(call archive_module,"make-core","core")
 
+# PHP bundle flavour: make-apache-php (default) or make-frankenphp.
+# Override in .env / .env.local to pin the project to a flavour.
+XO_PHP_MODULE ?= make-apache-php
+
 install.php:
-	$(call archive_module,"make-apache-php","php")
+	$(call archive_module,${XO_PHP_MODULE},"php")
 
 install.node:
 	$(call archive_module,"make-node","node")
