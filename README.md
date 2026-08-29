@@ -105,7 +105,7 @@ After a successful start, you have the following services:
 
 | Service         | URL/Port                | Description                                            |
 |-----------------|-------------------------|--------------------------------------------------------|
-| **PHP**         | `http://localhost:80`   | PHP running with an apache2 webserver                  |
+| **PHP**         | `http://localhost:80`   | PHP webserver (Apache or FrankenPHP, per `XO_PHP_MODULE`) |
 | **Node.js**     | `http://localhost:3000` | React/Vue development server with hot-reload           |
 | **PostgreSQL**  | `localhost:5432`        | Database (User: `app`, Password: `app`, DB: `symfony`) |
 | **Mailpit**     | `http://localhost:8025` | Email web interface for testing emails                 |
