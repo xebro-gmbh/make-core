@@ -62,6 +62,10 @@ fi
 chmod 600 "${KEY_FILE}"
 chmod 644 "${CERT_FILE}"
 
+if [[ "${DOMAIN}" == "localhost" || "${DOMAIN}" == "127.0.0.1" ]]; then
+  HOSTS_UPDATE="false"
+fi
+
 case "${HOSTS_UPDATE}" in
   true|TRUE|True|1|yes|YES|on|ON)
     if awk -v domain="${DOMAIN}" '
@@ -77,21 +81,7 @@ case "${HOSTS_UPDATE}" in
     ' "${HOSTS_FILE}"; then
       printf "[core] Hosts entry for %s already exists, skipping hosts update.\n" "${DOMAIN}"
     else
-      awk '
-        {
-          keep = 1
-          for (i = 2; i <= NF; i++) {
-            if ($i ~ /\.bob$/) {
-              keep = 0
-              break
-            }
-          }
-          if (keep) {
-            print $0
-          }
-        }
-      ' "${HOSTS_FILE}" > "${TMP_HOSTS_FILE}"
-
+      cat "${HOSTS_FILE}" > "${TMP_HOSTS_FILE}"
       printf "127.0.0.1 %s\n" "${DOMAIN}" >> "${TMP_HOSTS_FILE}"
 
       if [[ -w "${HOSTS_FILE}" ]]; then
@@ -103,7 +93,7 @@ case "${HOSTS_UPDATE}" in
         exit 1
       fi
 
-      printf "[core] Updated %s: removed '*.bob' entries and set %s -> 127.0.0.1\n" "${HOSTS_FILE}" "${DOMAIN}"
+      printf "[core] Updated %s: appended %s -> 127.0.0.1\n" "${HOSTS_FILE}" "${DOMAIN}"
     fi
     ;;
   *)

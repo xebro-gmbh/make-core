@@ -146,8 +146,8 @@ docker.clean: ## Remove all docker Container and clean up System
 	@${DOCKER_COMPOSE} down --remove-orphans
 	@docker images | awk '$$2 == "<none>" {print $$3}' | xargs -r docker image rm -f
 
-docker.kill: ## kill ALL docker container running on your Host
-	@docker ps -aq | xargs -r docker stop | xargs -r docker rm
+docker.kill: ## Stop and remove all containers of this project
+	@${DOCKER_COMPOSE} down --remove-orphans
 
 docker.pull: ## Update all docker container
 	@${DOCKER_COMPOSE} pull
@@ -167,9 +167,12 @@ docker.config: ## Show docker compose config
 core.help:
 	$(call add_help,${CORE_DIR}Makefile,"core")
 
-docker.restart:
-	@docker ps -aq | xargs -r docker rm -f
+docker.restart: ## Recreate and start all containers of this project
+	@${DOCKER_COMPOSE} down --remove-orphans
 	@${DOCKER_COMPOSE} up -d
+
+instance.init: ## Generate per-checkout .env.local with unique project name and free host ports
+	@bash ${XO_MODULES_DIR}/core/instance_init.sh
 
 core.generate: ## Generate compose.yaml files from base + module files
 	$(call target_name,$@)
