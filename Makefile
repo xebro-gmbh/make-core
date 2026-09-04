@@ -113,6 +113,12 @@ install.postgres:
 install.mailpit:
 	$(call archive_module,"make-mailpit","mailpit")
 
+install.wordpress:
+	$(call archive_module,"make-wordpress","wordpress")
+
+install.mysql:
+	$(call archive_module,"make-mysql","mysql")
+
 install.localstack:
 	$(call archive_module,"make-localstack","localstack")
 
