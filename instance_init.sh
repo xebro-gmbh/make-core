@@ -88,6 +88,46 @@ if grep -q '^VITE_API_BASE_URL=' "${ENV_FILE}" 2>/dev/null; then
   printf 'VITE_API_BASE_URL="https://localhost:%s/api"\n' "${PHP_TLS_PORT}" >> "${TMP_ENV_LOCAL}"
 fi
 
+# Bundle ports (proxy/shopware/wordpress/mysql) — only when the project's
+# .env defines the variable, so unrelated projects keep a lean .env.local.
+# Base ports are unprivileged on purpose: parallel instances must never need
+# root ports; the proxy still terminates TLS, just on a high port.
+add_port_if_defined() {
+  local var="$1" base="$2"
+  if grep -q "^${var}=" "${ENV_FILE}" 2>/dev/null; then
+    local port
+    port="$(pick_port "${base}")"
+    printf '%s=%s\n' "${var}" "${port}" >> "${TMP_ENV_LOCAL}"
+    eval "${var}=${port}"
+  fi
+}
+add_port_if_defined XO_PROXY_HTTP_PORT 8880
+add_port_if_defined XO_PROXY_HTTPS_PORT 9443
+add_port_if_defined XO_SHOPWARE_HTTP_PORT 8080
+add_port_if_defined XO_SHOPWARE_DB_PORT 3306
+add_port_if_defined XO_SHOPWARE_MAIL_PORT 1080
+add_port_if_defined XO_MYSQL_PORT 3307
+add_port_if_defined XO_WORDPRESS_PORT 8081
+
+# Behind the proxy the public URLs carry the instance port — and each
+# instance gets its own hostname (<project>-<instance>.test), so cookies and
+# certs stay isolated between instances. generate_certs.sh picks the name up
+# on the next docker.up.
+if [[ -n "${XO_PROXY_HTTPS_PORT:-}" ]]; then
+  SERVER_NAME="localhost"
+  if grep -q '^XO_SERVER_NAME=' "${ENV_FILE}" 2>/dev/null; then
+    SERVER_NAME="${PROJECT_NAME}.test"
+    printf 'XO_SERVER_NAME=%s\n' "${SERVER_NAME}" >> "${TMP_ENV_LOCAL}"
+  fi
+  if grep -q '^XO_SHOPWARE_APP_URL=' "${ENV_FILE}" 2>/dev/null; then
+    SHOP_PREFIX="$(sed -n 's/^XO_SHOP_PATH_PREFIX=//p' "${ENV_FILE}" 2>/dev/null | tail -1)"
+    printf 'XO_SHOPWARE_APP_URL=https://%s:%s%s\n' "${SERVER_NAME}" "${XO_PROXY_HTTPS_PORT}" "${SHOP_PREFIX:-/shop}" >> "${TMP_ENV_LOCAL}"
+  fi
+  if grep -q '^XO_WORDPRESS_URL=' "${ENV_FILE}" 2>/dev/null; then
+    printf 'XO_WORDPRESS_URL=https://%s:%s\n' "${SERVER_NAME}" "${XO_PROXY_HTTPS_PORT}" >> "${TMP_ENV_LOCAL}"
+  fi
+fi
+
 mv "${TMP_ENV_LOCAL}" "${ENV_LOCAL}"
 trap - EXIT
 
@@ -100,4 +140,9 @@ printf "[instance] Redis:             localhost:%s\n" "${REDIS_PORT}"
 printf "[instance] Localstack:        localhost:%s\n" "${LOCALSTACK_PORT_HOST}"
 printf "[instance] Mailpit (smtp/ui): localhost:%s / http://localhost:%s\n" "${MAILPIT_SMTP_PORT}" "${MAILPIT_UI_PORT}"
 printf "[instance] RabbitMQ (amqp/ui):localhost:%s / http://localhost:%s\n" "${RABBITMQ_PORT}" "${RABBITMQ_MGMT_PORT}"
+if [[ -n "${XO_PROXY_HTTPS_PORT:-}" ]]; then
+  printf "[instance] Proxy (https/http):https://%s:%s / http://%s:%s\n" "${SERVER_NAME}" "${XO_PROXY_HTTPS_PORT}" "${SERVER_NAME}" "${XO_PROXY_HTTP_PORT:-?}"
+fi
+[[ -n "${XO_SHOPWARE_HTTP_PORT:-}" ]] && printf "[instance] Shopware (direct):  http://localhost:%s (db %s, mail %s)\n" "${XO_SHOPWARE_HTTP_PORT}" "${XO_SHOPWARE_DB_PORT:-?}" "${XO_SHOPWARE_MAIL_PORT:-?}"
+[[ -n "${XO_WORDPRESS_PORT:-}" ]] && printf "[instance] WordPress (direct): http://localhost:%s (db %s)\n" "${XO_WORDPRESS_PORT}" "${XO_MYSQL_PORT:-?}"
 printf "[instance] Next: make start && make init\n"
