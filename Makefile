@@ -119,6 +119,12 @@ install.wordpress:
 install.mysql:
 	$(call archive_module,"make-mysql","mysql")
 
+install.proxy:
+	$(call archive_module,"make-proxy","proxy")
+
+install.shopware:
+	$(call archive_module,"make-shopware","shopware")
+
 install.localstack:
 	$(call archive_module,"make-localstack","localstack")
 
