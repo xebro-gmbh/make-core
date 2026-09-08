@@ -138,6 +138,18 @@ install.modules: install.core install.php install.node install.postgres install.
 
 update.php: install.php
 
+# Which vendored modules this project uses — set in .env, e.g.
+# XO_PROJECT_MODULES=core proxy shopware wordpress mysql
+# `make core.update` re-vendors them all from GitHub (each docker/<module>/
+# is REPLACED — never edit vendored modules locally, configure via .env),
+# then re-runs `make install` (seeds, route snippets, compose generation).
+XO_PROJECT_MODULES ?=
+
+core.update: ## Re-vendor all modules from XO_PROJECT_MODULES and re-run install
+	@test -n "${XO_PROJECT_MODULES}" || { printf "XO_PROJECT_MODULES is empty — set it in .env (e.g. 'core proxy shopware wordpress mysql')\n"; exit 1; }
+	@for m in ${XO_PROJECT_MODULES}; do $(MAKE) --no-print-directory install.$$m; done
+	@$(MAKE) --no-print-directory install
+
 # @see https://docs.docker.com/compose/environment-variables/envvars/
 export COMPOSE_PROJECT_NAME=${XO_PROJECT_NAME}
 export COMPOSE_REMOVE_ORPHANS=1
